@@ -9,10 +9,12 @@ import PricingSettings from '../../components/provider/PricingSettings'
 import ExperiencePortfolio from '../../components/provider/ExperiencePortfolio'
 import DocumentUpload from '../../components/provider/DocumentUpload'
 import StaffManagement from '../../components/provider/StaffManagement'
+import Earnings from '../../components/provider/Earnings'
+import LocationTracker from '../../components/provider/LocationTracker'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
-  const [activeModule, setActiveModule] = useState('profile')
+  const [activeModule, setActiveModule] = useState('earnings')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -60,7 +62,9 @@ export default function ProviderDashboard({ user }) {
       case 'portfolio': return <ExperiencePortfolio />
       case 'documents': return <DocumentUpload />
       case 'staff': return <StaffManagement />
-      default: return <MyProfile />
+      case 'location-tracker': return <LocationTracker />
+      case 'earnings': return <Earnings user={user} />
+      default: return <Earnings user={user} />
     }
   }
 
