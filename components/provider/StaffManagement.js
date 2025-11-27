@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import ImageUpload from '../ImageUpload'
 
 export default function StaffManagement() {
     const [loading, setLoading] = useState(true)
@@ -136,13 +137,10 @@ export default function StaffManagement() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">ID Proof URL</label>
-                        <input
-                            type="url"
+                        <ImageUpload
+                            label="ID Proof"
                             value={newStaff.id_proof_url}
-                            onChange={(e) => setNewStaff({ ...newStaff, id_proof_url: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="https://..."
+                            onChange={(url) => setNewStaff({ ...newStaff, id_proof_url: url })}
                         />
                     </div>
 

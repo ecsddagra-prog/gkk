@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import ImageUpload from '../ImageUpload'
 
 export default function DocumentUpload() {
     const [loading, setLoading] = useState(true)
@@ -118,14 +119,10 @@ export default function DocumentUpload() {
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Document Image URL</label>
-                        <input
-                            type="url"
-                            required
+                        <ImageUpload
+                            label="Document Image"
                             value={newDoc.document_url}
-                            onChange={(e) => setNewDoc({ ...newDoc, document_url: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="https://..."
+                            onChange={(url) => setNewDoc({ ...newDoc, document_url: url })}
                         />
                     </div>
 

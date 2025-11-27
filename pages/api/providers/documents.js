@@ -38,21 +38,21 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { doc_type, metadata, file_url } = req.body || {}
+      const { document_type, metadata, document_url } = req.body || {}
 
-      if (!doc_type) {
-        return res.status(400).json({ error: 'doc_type is required' })
+      if (!document_type) {
+        return res.status(400).json({ error: 'document_type is required' })
       }
 
       const { data: document, error } = await supabaseAdmin
         .from('provider_documents')
         .upsert({
           provider_id: provider.id,
-          doc_type,
+          document_type,
           metadata: metadata || null,
-          file_url: file_url || null,
+          document_url: document_url || null,
           status: 'pending'
-        }, { onConflict: 'provider_id,doc_type' })
+        }, { onConflict: 'provider_id,document_type' })
         .select()
         .single()
 

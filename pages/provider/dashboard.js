@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import ProviderLayout from '../../components/provider/ProviderLayout'
+import MyProfile from '../../components/provider/MyProfile'
 import ServiceManagement from '../../components/provider/ServiceManagement'
 import LocationSettings from '../../components/provider/LocationSettings'
 import PricingSettings from '../../components/provider/PricingSettings'
@@ -11,7 +12,7 @@ import StaffManagement from '../../components/provider/StaffManagement'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
-  const [activeModule, setActiveModule] = useState('services')
+  const [activeModule, setActiveModule] = useState('profile')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -52,13 +53,14 @@ export default function ProviderDashboard({ user }) {
 
   const renderModule = () => {
     switch (activeModule) {
+      case 'profile': return <MyProfile />
       case 'services': return <ServiceManagement />
       case 'location': return <LocationSettings />
       case 'pricing': return <PricingSettings />
       case 'portfolio': return <ExperiencePortfolio />
       case 'documents': return <DocumentUpload />
       case 'staff': return <StaffManagement />
-      default: return <ServiceManagement />
+      default: return <MyProfile />
     }
   }
 
