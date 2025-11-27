@@ -12,6 +12,7 @@ export default async function handler(req, res) {
                 fixed_location_lat: provider.fixed_location_lat,
                 fixed_location_lng: provider.fixed_location_lng,
                 fixed_location_address: provider.fixed_location_address,
+                is_online: provider.is_online,
                 current_lat: provider.current_lat,
                 current_lng: provider.current_lng
             })
@@ -23,7 +24,8 @@ export default async function handler(req, res) {
                 is_fixed_location,
                 fixed_location_lat,
                 fixed_location_lng,
-                fixed_location_address
+                fixed_location_address,
+                is_online
             } = req.body
 
             const { error } = await supabaseAdmin
@@ -34,6 +36,7 @@ export default async function handler(req, res) {
                     fixed_location_lat,
                     fixed_location_lng,
                     fixed_location_address,
+                    is_online,
                     updated_at: new Date()
                 })
                 .eq('id', provider.id)

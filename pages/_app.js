@@ -1,4 +1,5 @@
 import '../styles/globals.css'
+import 'leaflet/dist/leaflet.css'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'

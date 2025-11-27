@@ -20,11 +20,12 @@ export default async function handler(req, res) {
             business_lng,
             business_category_id,
             business_subcategory_id,
-            gst_number
+            gst_number,
+            city_id
         } = req.body
 
         // Validation
-        if (!business_name || !business_address || !business_category_id || !business_subcategory_id) {
+        if (!business_name || !business_address || !business_category_id || !business_subcategory_id || !city_id) {
             return res.status(400).json({ error: 'Missing required fields' })
         }
 
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
                 business_lng: business_lng || null,
                 business_category_id,
                 gst_number: gst_number?.trim() || null,
+                city_id,
                 is_verified: false,
                 is_suspended: false,
                 is_available: true,
