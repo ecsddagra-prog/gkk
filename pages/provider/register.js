@@ -10,6 +10,7 @@ export default function ProviderRegister({ user }) {
   const [loading, setLoading] = useState(false)
   const [locating, setLocating] = useState(false)
   const [categories, setCategories] = useState([])
+  const [cities, setCities] = useState([])
   const [services, setServices] = useState([])
   const [formData, setFormData] = useState({
     business_name: '',
@@ -18,7 +19,8 @@ export default function ProviderRegister({ user }) {
     business_lng: null,
     business_category_id: '',
     business_subcategory_id: '',
-    gst_number: ''
+    gst_number: '',
+    city_id: ''
   })
   const [pageLoading, setPageLoading] = useState(true)
 
@@ -74,7 +76,10 @@ export default function ProviderRegister({ user }) {
       console.log('Bootstrap API response:', data)
       console.log('Categories count:', data.categories?.length || 0)
 
+      console.log('Categories count:', data.categories?.length || 0)
+
       setCategories(data.categories || [])
+      setCities(data.cities || [])
     } catch (error) {
       console.error('Error loading categories:', error)
       console.error('Error response:', error.response?.data)
@@ -131,8 +136,8 @@ export default function ProviderRegister({ user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.business_category_id || !formData.business_subcategory_id) {
-      toast.error('Please select your business category and service')
+    if (!formData.business_category_id || !formData.business_subcategory_id || !formData.city_id) {
+      toast.error('Please fill in all required fields')
       return
     }
     setLoading(true)
@@ -146,7 +151,8 @@ export default function ProviderRegister({ user }) {
         business_lng: formData.business_lng || null,
         business_category_id: formData.business_category_id,
         business_subcategory_id: formData.business_subcategory_id,
-        gst_number: formData.gst_number?.trim() || null
+        gst_number: formData.gst_number?.trim() || null,
+        city_id: formData.city_id
       }
 
       const response = await axios.post('/api/providers/register', payload, {
@@ -212,6 +218,23 @@ export default function ProviderRegister({ user }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 placeholder="e.g. Spark Cleaners"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+              <select
+                required
+                value={formData.city_id}
+                onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Select City</option>
+                {cities.map(city => (
+                  <option key={city.id} value={city.id}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
