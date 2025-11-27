@@ -1,0 +1,26 @@
+[
+  {
+    "user": {
+      "id": "1e90bb2c-2aae-490c-997d-2dc0cff18925",
+      "email": "admin@admin.com",
+      "phone": null,
+      "role": "superadmin",
+      "full_name": "admin"
+    },
+    "provider": null
+  },
+  {
+    "user": {
+      "id": "e391e4ca-6d57-4e97-9267-92187a1c8911",
+      "email": "m@gmail.com",
+      "phone": null,
+      "role": "provider",
+      "full_name": "majid"
+    },
+    "provider": {
+      "id": "538e5ee0-a118-4400-9215-ca1c2c85de1b",
+      "business_name": "mess",
+      "is_verified": false
+    }
+  }
+]
