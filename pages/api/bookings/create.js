@@ -23,6 +23,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('📥 Booking creation request received:', JSON.stringify(req.body, null, 2))
+
     const {
       user_id,
       service_id,
@@ -195,32 +197,45 @@ export default async function handler(req, res) {
     }
 
     // Create booking
+    const bookingData = {
+      user_id,
+      service_id,
+      provider_id,
+      city_id,
+      address_id,
+      service_address,
+      service_lat: service_lat ? parseFloat(service_lat) : null,
+      service_lng: service_lng ? parseFloat(service_lng) : null,
+      scheduled_date: scheduled_date ? new Date(scheduled_date) : null,
+      status: user_quoted_price ? 'quote_requested' : 'pending',
+      user_quoted_price: user_quoted_price ? parseFloat(user_quoted_price) : null,
+      // Store primary sub-service ID if any, or null. 
+      // Ideally bookings table should rely on booking_items, but for backward compat we keep this.
+      sub_service_id: selectedSubServices.length > 0 ? selectedSubServices[0].id : null,
+      sub_service_name: bookingSubServiceName,
+      base_charge: totalBaseCharge,
+      for_whom
+    }
+
+    // Only add other_contact if booking for someone else
+    if (for_whom === 'other' && other_contact) {
+      bookingData.other_contact = other_contact
+    }
+
+    console.log('📝 Creating booking with data:', JSON.stringify(bookingData, null, 2))
+
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .insert({
-        user_id,
-        service_id,
-        provider_id,
-        city_id,
-        address_id,
-        service_address,
-        service_lat,
-        service_lng,
-        scheduled_date: scheduled_date ? new Date(scheduled_date) : null,
-        status: user_quoted_price ? 'quote_requested' : 'pending',
-        user_quoted_price: user_quoted_price || null,
-        // Store primary sub-service ID if any, or null. 
-        // Ideally bookings table should rely on booking_items, but for backward compat we keep this.
-        sub_service_id: selectedSubServices.length > 0 ? selectedSubServices[0].id : null,
-        sub_service_name: bookingSubServiceName,
-        base_charge: totalBaseCharge,
-        for_whom,
-        other_contact: for_whom === 'other' ? other_contact : null
-      })
+      .insert(bookingData)
       .select()
       .single()
 
-    if (bookingError) throw bookingError
+    if (bookingError) {
+      console.error('❌ Booking creation error:', bookingError)
+      throw bookingError
+    }
+
+    console.log('✅ Booking created successfully:', booking.id)
 
     // Insert Booking Items
     const bookingItems = []
