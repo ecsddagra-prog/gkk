@@ -580,13 +580,13 @@ export default function BookService({ user }) {
                     </>
                   )}
                   <div className="border-t border-blue-300 mt-2 pt-2 flex justify-between font-bold text-gray-900">
-                    <span>Total:</span>
+                    <span>Estimated Rate:</span>
                     <span>₹{chargeSummary.base}</span>
                   </div>
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Base Price:</span>
+                  <span className="text-gray-700">Estimated Rate:</span>
                   <span className="font-bold text-blue-600">₹{activeService?.base_price}</span>
                 </div>
               )}

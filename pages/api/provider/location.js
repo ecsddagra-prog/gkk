@@ -6,51 +6,64 @@ export default async function handler(req, res) {
         const { provider } = await requireProviderUser(req)
 
         if (req.method === 'GET') {
-            return res.status(200).json({
-                service_radius_km: provider.service_radius_km,
-                is_fixed_location: provider.is_fixed_location,
-                fixed_location_lat: provider.fixed_location_lat,
-                fixed_location_lng: provider.fixed_location_lng,
-                fixed_location_address: provider.fixed_location_address,
-                is_online: provider.is_online,
-                current_lat: provider.current_lat,
-                current_lng: provider.current_lng
-            })
+            // Get current location
+            const { data, error } = await supabaseAdmin
+                .from('providers')
+                .select('current_lat, current_lng, last_location_update, service_radius_km, is_online')
+                .eq('id', provider.id)
+                .single()
+
+            if (error) throw error
+
+            return res.status(200).json({ location: data })
         }
 
         if (req.method === 'PUT') {
-            const {
-                service_radius_km,
-                is_fixed_location,
-                fixed_location_lat,
-                fixed_location_lng,
-                fixed_location_address,
-                is_online
-            } = req.body
+            const { latitude, longitude, is_online } = req.body
+
+            const updates = {}
+
+            // If coordinates are provided, validate and update them
+            if (latitude !== undefined && longitude !== undefined) {
+                // Validate coordinates
+                if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                    return res.status(400).json({ error: 'Invalid coordinates' })
+                }
+
+                updates.current_lat = latitude
+                updates.current_lng = longitude
+                updates.last_location_update = new Date().toISOString()
+            }
+
+            // Update online status if provided
+            if (typeof is_online !== 'undefined') {
+                updates.is_online = is_online
+            }
+
+            // Ensure we have something to update
+            if (Object.keys(updates).length === 0) {
+                return res.status(400).json({ error: 'No updates provided' })
+            }
 
             const { error } = await supabaseAdmin
                 .from('providers')
-                .update({
-                    service_radius_km,
-                    is_fixed_location,
-                    fixed_location_lat,
-                    fixed_location_lng,
-                    fixed_location_address,
-                    is_online,
-                    updated_at: new Date()
-                })
+                .update(updates)
                 .eq('id', provider.id)
 
             if (error) throw error
 
-            return res.status(200).json({ success: true })
+            return res.status(200).json({
+                success: true,
+                message: 'Updated successfully',
+                updates
+            })
         }
 
         res.setHeader('Allow', ['GET', 'PUT'])
         res.status(405).end(`Method ${req.method} Not Allowed`)
 
     } catch (error) {
-        console.error('API Error:', error)
+        console.error('Provider location API error:', error)
         res.status(error.status || 500).json({ error: error.message })
     }
 }

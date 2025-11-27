@@ -11,6 +11,8 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
         { id: 'portfolio', label: 'Experience & Portfolio', icon: '👨‍💼' },
         { id: 'documents', label: 'License & KYC', icon: '📄' },
         { id: 'staff', label: 'Staff Management', icon: '👥' },
+        { id: 'location-tracker', label: 'Location Tracker', icon: '📍' },
+        { id: 'earnings', label: 'Earnings & Reviews', icon: '📊' },
     ]
 
     return (

@@ -37,10 +37,26 @@ export default function ProviderBookings({ user }) {
 
       setProvider(providerData)
 
+      // Get services this provider offers
+      const { data: providerServices } = await supabase
+        .from('provider_services')
+        .select('service_id')
+        .eq('provider_id', providerData.id)
+        .eq('is_active', true)
+
+      const serviceIds = (providerServices || []).map(ps => ps.service_id)
+
+      if (serviceIds.length === 0) {
+        setBookings([])
+        setLoading(false)
+        return
+      }
+
+      // Get bookings for these services
       let query = supabase
         .from('bookings')
         .select('*, service:services(*), user:users(*)')
-        .eq('provider_id', providerData.id)
+        .in('service_id', serviceIds)
         .order('created_at', { ascending: false })
 
       if (filter !== 'all') {
@@ -51,6 +67,7 @@ export default function ProviderBookings({ user }) {
       setBookings(bookingsData || [])
     } catch (error) {
       console.error('Error loading data:', error)
+      toast.error('Failed to load bookings')
     } finally {
       setLoading(false)
     }
@@ -114,11 +131,10 @@ export default function ProviderBookings({ user }) {
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg capitalize ${
-                  filter === status
+                className={`px-4 py-2 rounded-lg capitalize ${filter === status
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {status === 'all' ? 'All' : getStatusLabel(status)}
               </button>

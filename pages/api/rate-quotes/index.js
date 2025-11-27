@@ -32,8 +32,8 @@ export default async function handler(req, res) {
         details
       } = req.body || {}
 
-      if (!service_id || !city_id || !address_id) {
-        return res.status(400).json({ error: 'service_id, city_id and address_id are required' })
+      if (!service_id || !city_id) {
+        return res.status(400).json({ error: 'service_id and city_id are required' })
       }
 
       const countdownMinutes = Number(details?.countdown_minutes) || DEFAULT_COUNTDOWN_MINUTES
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
           service_id,
           sub_service_id: sub_service_id || null,
           city_id,
-          address_id,
+          address_id: address_id || null, // Make optional
           requested_price: requested_price || null,
           details: details || null,
           expires_at: expiresAt

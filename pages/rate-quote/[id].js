@@ -195,13 +195,12 @@ export default function RateQuoteDetails({ user }) {
                     <p className="text-sm text-gray-500">{rateQuote.sub_service.name}</p>
                   )}
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm ${
-                  rateQuote.status === 'converted'
+                <div className={`px-3 py-1 rounded-full text-sm ${rateQuote.status === 'converted'
                     ? 'bg-green-100 text-green-700'
                     : rateQuote.status === 'cancelled' || rateQuote.status === 'expired'
                       ? 'bg-red-100 text-red-700'
                       : 'bg-yellow-100 text-yellow-700'
-                }`}>
+                  }`}>
                   {rateQuote.status}
                 </div>
               </div>
@@ -226,7 +225,7 @@ export default function RateQuoteDetails({ user }) {
                 )}
                 {rateQuote.details?.base_charge && (
                   <div>
-                    <span className="font-semibold">Base Charge:</span> {formatCurrency(rateQuote.details.base_charge)}
+                    <span className="font-semibold">Estimated Rate:</span> {formatCurrency(rateQuote.details.base_charge)}
                     {rateQuote.details?.hourly_charge && (
                       <span className="ml-4">Hourly: {formatCurrency(rateQuote.details.hourly_charge)}/hr</span>
                     )}
@@ -264,13 +263,12 @@ export default function RateQuoteDetails({ user }) {
                           <div className="text-xs text-gray-400 mt-2">{formatDateTime(quote.created_at)}</div>
                         </div>
                         <div className="text-right space-y-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            quote.status === 'accepted'
+                          <span className={`px-2 py-1 rounded-full text-xs ${quote.status === 'accepted'
                               ? 'bg-green-100 text-green-700'
                               : quote.status === 'rejected'
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-yellow-100 text-yellow-700'
-                          }`}>
+                            }`}>
                             {quote.status}
                           </span>
                           {isOwner && rateQuote.status !== 'converted' && quote.status === 'pending' && (

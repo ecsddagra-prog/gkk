@@ -40,7 +40,15 @@ export default function AdminProviders({ user }) {
     try {
       const { data } = await supabase
         .from('providers')
-        .select('*, user:users(*)')
+        .select(`
+          *,
+          user:users (
+            id,
+            full_name,
+            email,
+            phone
+          )
+        `)
         .order('created_at', { ascending: false })
 
       setProviders(data || [])
@@ -70,7 +78,7 @@ export default function AdminProviders({ user }) {
     try {
       await supabase
         .from('providers')
-        .update({ 
+        .update({
           is_suspended: !currentStatus,
           suspension_until: !currentStatus ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         })
@@ -123,7 +131,7 @@ export default function AdminProviders({ user }) {
               {providers.map(provider => (
                 <tr key={provider.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium">{provider.user?.full_name}</div>
+                    <div className="text-sm font-medium">{provider.user?.full_name || 'No Name'}</div>
                     <div className="text-sm text-gray-500">{provider.user?.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -137,9 +145,8 @@ export default function AdminProviders({ user }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="space-y-1">
-                      <span className={`px-2 py-1 text-xs rounded-full block ${
-                        provider.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs rounded-full block ${provider.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {provider.is_verified ? 'Verified' : 'Pending'}
                       </span>
                       {provider.is_suspended && (
@@ -150,19 +157,16 @@ export default function AdminProviders({ user }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => toggleVerification(provider.id, provider.is_verified)}
-                      className={`${
-                        provider.is_verified ? 'text-yellow-600' : 'text-green-600'
-                      } hover:underline`}
+                    <Link
+                      href={`/admin/providers/${provider.id}`}
+                      className="text-blue-600 hover:underline"
                     >
-                      {provider.is_verified ? 'Unverify' : 'Verify'}
-                    </button>
+                      View Details
+                    </Link>
                     <button
                       onClick={() => toggleSuspension(provider.id, provider.is_suspended)}
-                      className={`${
-                        provider.is_suspended ? 'text-green-600' : 'text-red-600'
-                      } hover:underline`}
+                      className={`${provider.is_suspended ? 'text-green-600' : 'text-red-600'
+                        } hover:underline`}
                     >
                       {provider.is_suspended ? 'Unsuspend' : 'Suspend'}
                     </button>
