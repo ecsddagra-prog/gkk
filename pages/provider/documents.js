@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import ImageUpload from '../../components/ImageUpload'
 
 const createEmptyForms = () => ({
   experience: { years: '', specialties: '', file_url: '' },
@@ -44,15 +45,10 @@ export default function ProviderDocuments({ user }) {
 
       setProvider(providerData)
 
-      const token = (await supabase.auth.getSession()).data.session?.access_token
-      const { data } = await axios.get('/api/providers/documents', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
       const docMap = {}
-      ;(data.documents || []).forEach(doc => {
-        docMap[doc.doc_type] = doc
-      })
+        ; (data.documents || []).forEach(doc => {
+          docMap[doc.document_type] = doc
+        })
       setDocuments(docMap)
 
       const nextForms = createEmptyForms()
@@ -61,7 +57,7 @@ export default function ProviderDocuments({ user }) {
           nextForms[key] = {
             ...nextForms[key],
             ...(doc.metadata || {}),
-            file_url: doc.file_url || ''
+            file_url: doc.document_url || ''
           }
         }
       })
@@ -99,9 +95,9 @@ export default function ProviderDocuments({ user }) {
       }
 
       await axios.post('/api/providers/documents', {
-        doc_type: docType,
+        document_type: docType,
         metadata,
-        file_url: file_url || null
+        document_url: file_url || null
       }, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -210,13 +206,10 @@ export default function ProviderDocuments({ user }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Proof / Portfolio URL</label>
-            <input
-              type="url"
+            <ImageUpload
+              label="Proof / Portfolio"
               value={forms.experience.file_url}
-              onChange={(e) => handleInputChange('experience', 'file_url', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
-              placeholder="Link to certificates, drive, etc."
+              onChange={(url) => handleInputChange('experience', 'file_url', url)}
             />
           </div>
           <button
@@ -265,13 +258,10 @@ export default function ProviderDocuments({ user }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Document URL</label>
-            <input
-              type="url"
+            <ImageUpload
+              label="Document Image"
               value={forms.license.file_url}
-              onChange={(e) => handleInputChange('license', 'file_url', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
-              placeholder="Upload to drive/dropbox and paste link"
+              onChange={(url) => handleInputChange('license', 'file_url', url)}
             />
           </div>
           <button
@@ -322,12 +312,10 @@ export default function ProviderDocuments({ user }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Certificate URL</label>
-            <input
-              type="url"
+            <ImageUpload
+              label="Certificate Image"
               value={forms.qualification.file_url}
-              onChange={(e) => handleInputChange('qualification', 'file_url', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              onChange={(url) => handleInputChange('qualification', 'file_url', url)}
             />
           </div>
           <button
@@ -386,12 +374,10 @@ export default function ProviderDocuments({ user }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cancelled Cheque / Passbook URL</label>
-            <input
-              type="url"
+            <ImageUpload
+              label="Cancelled Cheque / Passbook"
               value={forms.bank.file_url}
-              onChange={(e) => handleInputChange('bank', 'file_url', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              onChange={(url) => handleInputChange('bank', 'file_url', url)}
             />
           </div>
           <button

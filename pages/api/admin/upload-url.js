@@ -27,7 +27,8 @@ export default async function handler(req, res) {
             .eq('id', user.id)
             .single()
 
-        if (profile?.role !== 'superadmin') {
+        // Check if user has permission to upload
+        if (!['superadmin', 'admin', 'provider'].includes(profile?.role)) {
             return res.status(403).json({ error: 'Forbidden' })
         }
 

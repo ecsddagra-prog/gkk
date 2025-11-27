@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 
 export default function ProviderLayout({ children, activeModule, setActiveModule }) {
     const menuItems = [
+        { id: 'profile', label: 'My Profile', icon: '👤' },
         { id: 'services', label: 'Service Management', icon: '🛠️' },
         { id: 'location', label: 'Location & Radius', icon: '📍' },
         { id: 'pricing', label: 'Service Charges', icon: '💰' },
@@ -25,8 +26,8 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
                             key={item.id}
                             onClick={() => setActiveModule(item.id)}
                             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeModule === item.id
-                                    ? 'bg-blue-50 text-blue-600 font-medium'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                ? 'bg-blue-50 text-blue-600 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
                             <span className="text-xl">{item.icon}</span>

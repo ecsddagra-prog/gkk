@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import ImageUpload from '../ImageUpload'
 
 export default function ExperiencePortfolio() {
     const [loading, setLoading] = useState(true)
@@ -151,13 +152,10 @@ export default function ExperiencePortfolio() {
                     <h4 className="text-sm font-medium text-gray-700">Add New Work Photo</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2">
-                            <input
-                                type="url"
-                                required
+                            <ImageUpload
+                                label="Portfolio Image"
                                 value={newImage.image_url}
-                                onChange={(e) => setNewImage({ ...newImage, image_url: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                placeholder="Image URL (https://...)"
+                                onChange={(url) => setNewImage({ ...newImage, image_url: url })}
                             />
                         </div>
                         <div>
