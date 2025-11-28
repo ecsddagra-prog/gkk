@@ -20,7 +20,7 @@ export default async function handler(req, res) {
           service_categories(name)
         `)
                 .eq('is_active', true)
-                .eq('category_id', provider.business_category_id)
+            // .eq('category_id', provider.business_category_id)
 
             if (servicesError) throw servicesError
 
@@ -31,6 +31,19 @@ export default async function handler(req, res) {
                 .eq('provider_id', provider.id)
 
             if (psError) throw psError
+
+            // Fetch provider's custom rates for sub-services
+            const { data: providerRates, error: ratesError } = await supabaseAdmin
+                .from('provider_service_rates')
+                .select('sub_service_id, rate')
+                .eq('provider_id', provider.id)
+
+            if (ratesError) throw ratesError
+
+            const ratesMap = (providerRates || []).reduce((acc, curr) => {
+                acc[curr.sub_service_id] = curr.rate
+                return acc
+            }, {})
 
             // Merge data
             const services = allServices.map(service => {
@@ -59,14 +72,19 @@ export default async function handler(req, res) {
             // Attach subservices to services
             const servicesWithSub = services.map(service => ({
                 ...service,
-                subservices: subservices.filter(sub => sub.service_id === service.id)
+                subservices: subservices
+                    .filter(sub => sub.service_id === service.id)
+                    .map(sub => ({
+                        ...sub,
+                        provider_rate: ratesMap[sub.id] || null // Add provider's custom rate
+                    }))
             }))
 
             return res.status(200).json({ services: servicesWithSub })
         }
 
         if (req.method === 'PUT') {
-            const { service_id, is_enabled, base_price, inspection_fee, emergency_fee } = req.body
+            const { service_id, is_enabled, base_price, inspection_fee, emergency_fee, sub_service_rates } = req.body
 
             if (!service_id) {
                 return res.status(400).json({ error: 'Service ID is required' })
@@ -88,8 +106,7 @@ export default async function handler(req, res) {
                         is_active: is_enabled,
                         base_price,
                         inspection_fee,
-                        emergency_fee,
-                        updated_at: new Date()
+                        emergency_fee
                     })
                     .eq('id', existing.id)
 
@@ -108,6 +125,25 @@ export default async function handler(req, res) {
                     })
 
                 if (error) throw error
+            }
+
+            // Handle sub-service rates if provided
+            if (sub_service_rates && Array.isArray(sub_service_rates)) {
+                const upsertData = sub_service_rates.map(({ sub_service_id, rate }) => ({
+                    provider_id: provider.id,
+                    sub_service_id,
+                    rate: Number(rate)
+                }))
+
+                if (upsertData.length > 0) {
+                    const { error: ratesError } = await supabaseAdmin
+                        .from('provider_service_rates')
+                        .upsert(upsertData, {
+                            onConflict: 'provider_id, sub_service_id'
+                        })
+
+                    if (ratesError) throw ratesError
+                }
             }
 
             return res.status(200).json({ success: true })

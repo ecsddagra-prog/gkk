@@ -172,17 +172,17 @@ export default function SuperAdminDashboard({ user }) {
                 <div className="mb-6">
                     <h3 className="text-xl font-bold mb-4">Super Admin Controls</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg shadow-md p-6 text-white hover:shadow-lg transition cursor-pointer">
+                        <Link href="/admin/users" className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg shadow-md p-6 text-white hover:shadow-lg transition cursor-pointer">
                             <div className="text-4xl mb-4">👥</div>
                             <h3 className="text-xl font-semibold mb-2">User Management</h3>
                             <p className="text-purple-100 text-sm">Manage all users and roles</p>
-                        </div>
+                        </Link>
 
-                        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg shadow-md p-6 text-white hover:shadow-lg transition cursor-pointer">
+                        <Link href="/admin/admin-users" className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg shadow-md p-6 text-white hover:shadow-lg transition cursor-pointer">
                             <div className="text-4xl mb-4">🛡️</div>
                             <h3 className="text-xl font-semibold mb-2">Admin Management</h3>
                             <p className="text-indigo-100 text-sm">Create and manage admin users</p>
-                        </div>
+                        </Link>
 
                         <Link href="/admin/settings" className="bg-gradient-to-br from-pink-500 to-pink-700 rounded-lg shadow-md p-6 text-white hover:shadow-lg transition cursor-pointer">
                             <div className="text-4xl mb-4">⚙️</div>

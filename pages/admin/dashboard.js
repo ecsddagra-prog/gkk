@@ -183,6 +183,12 @@ export default function AdminDashboard({ user }) {
             <h3 className="text-xl font-semibold mb-2">Settings</h3>
             <p className="text-gray-600 text-sm">Configure platform settings</p>
           </Link>
+
+          <Link href="/admin/service-requests" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer">
+            <div className="text-4xl mb-4">📩</div>
+            <h3 className="text-xl font-semibold mb-2">Service Requests</h3>
+            <p className="text-gray-600 text-sm">Manage new service requests</p>
+          </Link>
         </div>
       </div>
     </div>

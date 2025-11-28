@@ -6,12 +6,11 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
     const menuItems = [
         { id: 'profile', label: 'My Profile', icon: '👤' },
         { id: 'services', label: 'Service Management', icon: '🛠️' },
-        { id: 'location', label: 'Location & Radius', icon: '📍' },
+        { id: 'location-management', label: 'Location Management', icon: '📍' },
         { id: 'pricing', label: 'Service Charges', icon: '💰' },
         { id: 'portfolio', label: 'Experience & Portfolio', icon: '👨‍💼' },
         { id: 'documents', label: 'License & KYC', icon: '📄' },
         { id: 'staff', label: 'Staff Management', icon: '👥' },
-        { id: 'location-tracker', label: 'Location Tracker', icon: '📍' },
         { id: 'earnings', label: 'Earnings & Reviews', icon: '📊' },
     ]
 

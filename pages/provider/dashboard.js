@@ -4,13 +4,12 @@ import { supabase } from '../../lib/supabase'
 import ProviderLayout from '../../components/provider/ProviderLayout'
 import MyProfile from '../../components/provider/MyProfile'
 import ServiceManagement from '../../components/provider/ServiceManagement'
-import LocationSettings from '../../components/provider/LocationSettings'
+import LocationManagement from '../../components/provider/LocationManagement'
 import PricingSettings from '../../components/provider/PricingSettings'
 import ExperiencePortfolio from '../../components/provider/ExperiencePortfolio'
 import DocumentUpload from '../../components/provider/DocumentUpload'
 import StaffManagement from '../../components/provider/StaffManagement'
 import Earnings from '../../components/provider/Earnings'
-import LocationTracker from '../../components/provider/LocationTracker'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
@@ -57,12 +56,11 @@ export default function ProviderDashboard({ user }) {
     switch (activeModule) {
       case 'profile': return <MyProfile />
       case 'services': return <ServiceManagement />
-      case 'location': return <LocationSettings />
+      case 'location-management': return <LocationManagement />
       case 'pricing': return <PricingSettings />
       case 'portfolio': return <ExperiencePortfolio />
       case 'documents': return <DocumentUpload />
       case 'staff': return <StaffManagement />
-      case 'location-tracker': return <LocationTracker />
       case 'earnings': return <Earnings user={user} />
       default: return <Earnings user={user} />
     }
