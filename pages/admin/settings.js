@@ -8,6 +8,8 @@ export default function AdminSettings({ user }) {
   const router = useRouter()
   const [settings, setSettings] = useState({})
   const [loading, setLoading] = useState(true)
+  const [services, setServices] = useState([])
+  const [selectedService, setSelectedService] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -36,17 +38,50 @@ export default function AdminSettings({ user }) {
     }
   }
 
+  useEffect(() => {
+    loadServices()
+  }, [])
+
+  useEffect(() => {
+    if (user) {
+      loadSettings()
+    }
+  }, [selectedService])
+
+  const loadServices = async () => {
+    const { data } = await supabase.from('services').select('id, name').order('name')
+    setServices(data || [])
+  }
+
   const loadSettings = async () => {
+    setLoading(true)
     try {
-      const { data } = await supabase
+      // 1. Fetch Global Settings
+      const { data: globalData } = await supabase
         .from('admin_settings')
         .select('*')
+        .is('service_id', null)
 
-      const settingsObj = {}
-      data?.forEach(setting => {
-        settingsObj[setting.key] = setting.value
+      const finalSettings = {}
+
+      // Populate with global defaults
+      globalData?.forEach(setting => {
+        finalSettings[setting.key] = { ...setting.value, _isInherited: true }
       })
-      setSettings(settingsObj)
+
+      // 2. If Service Selected, Fetch & Merge Overrides
+      if (selectedService) {
+        const { data: serviceData } = await supabase
+          .from('admin_settings')
+          .select('*')
+          .eq('service_id', selectedService)
+
+        serviceData?.forEach(setting => {
+          finalSettings[setting.key] = { ...setting.value, _isInherited: false }
+        })
+      }
+
+      setSettings(finalSettings)
     } catch (error) {
       console.error('Error loading settings:', error)
       toast.error('Failed to load settings')
@@ -57,18 +92,45 @@ export default function AdminSettings({ user }) {
 
   const updateSetting = async (key, value) => {
     try {
-      const { error } = await supabase
-        .from('admin_settings')
-        .upsert({
-          key,
-          value,
-          updated_by: user.id
-        })
+      // Check if record exists for this scope
+      let query = supabase.from('admin_settings').select('id').eq('key', key)
+
+      if (selectedService) {
+        query = query.eq('service_id', selectedService)
+      } else {
+        query = query.is('service_id', null)
+      }
+
+      const { data: existing } = await query.single()
+
+      let error
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from('admin_settings')
+          .update({
+            value,
+            updated_by: user.id,
+            updated_at: new Date()
+          })
+          .eq('id', existing.id)
+        error = updateError
+      } else {
+        const { error: insertError } = await supabase
+          .from('admin_settings')
+          .insert({
+            key,
+            value,
+            updated_by: user.id,
+            service_id: selectedService || null
+          })
+        error = insertError
+      }
 
       if (error) throw error
       toast.success('Setting updated successfully')
       loadSettings()
     } catch (error) {
+      console.error('Update error:', error)
       toast.error('Failed to update setting')
     }
   }
@@ -92,6 +154,19 @@ export default function AdminSettings({ user }) {
               </Link>
               <h1 className="text-2xl font-bold text-blue-600">Platform Settings</h1>
             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">Configure for:</span>
+              <select
+                value={selectedService}
+                onChange={(e) => setSelectedService(e.target.value)}
+                className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Global Defaults</option>
+                {services.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </header>
@@ -105,6 +180,9 @@ export default function AdminSettings({ user }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cashback Percentage (%)
+                  {settings.cashback_percentage?._isInherited && selectedService && (
+                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Global Default</span>
+                  )}
                 </label>
                 <input
                   type="number"
@@ -131,6 +209,9 @@ export default function AdminSettings({ user }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Reward Points per ₹100
+                  {settings.reward_points_per_booking?._isInherited && selectedService && (
+                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Global Default</span>
+                  )}
                 </label>
                 <input
                   type="number"
@@ -205,6 +286,9 @@ export default function AdminSettings({ user }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Platform Commission (%)
+                  {settings.provider_commission?._isInherited && selectedService && (
+                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Global Default</span>
+                  )}
                 </label>
                 <input
                   type="number"

@@ -68,10 +68,22 @@ export default async function handler(req, res) {
 
       if (error) throw error
 
+      // Fetch provider specific rates
+      const { data: rates } = await supabaseAdmin
+        .from('provider_service_rates')
+        .select('sub_service_id, rate')
+        .eq('provider_id', provider.id)
+
+      const ratesMap = (rates || []).reduce((acc, curr) => {
+        acc[curr.sub_service_id] = curr.rate
+        return acc
+      }, {})
+
       return res.status(200).json({
         subservices: (subservices || []).map(sub => ({
           ...sub,
-          can_edit: sub.created_by_provider_id === provider.id
+          can_edit: sub.created_by_provider_id === provider.id,
+          provider_rate: ratesMap[sub.id] || null
         }))
       })
     }

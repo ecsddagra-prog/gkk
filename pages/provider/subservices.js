@@ -24,6 +24,7 @@ export default function ProviderSubservices({ user }) {
   const [saving, setSaving] = useState(false)
   const [editingSubservice, setEditingSubservice] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
+  const [rateModal, setRateModal] = useState({ isOpen: false, sub: null, rate: '' })
 
   useEffect(() => {
     if (!user) {
@@ -170,6 +171,35 @@ export default function ProviderSubservices({ user }) {
     }
   }
 
+  const openRateModal = (sub) => {
+    setRateModal({
+      isOpen: true,
+      sub,
+      rate: sub.provider_rate || sub.base_charge || ''
+    })
+  }
+
+  const saveRate = async (e) => {
+    e.preventDefault()
+    if (!rateModal.rate) return
+
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      await axios.post('/api/providers/rates', {
+        sub_service_id: rateModal.sub.id,
+        rate: rateModal.rate
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      toast.success('Rate updated successfully')
+      setRateModal({ isOpen: false, sub: null, rate: '' })
+      loadSubservices(selectedServiceId)
+    } catch (error) {
+      toast.error('Failed to update rate')
+    }
+  }
+
   const activeService = useMemo(
     () => services.find(service => service.id === selectedServiceId),
     [services, selectedServiceId]
@@ -265,17 +295,36 @@ export default function ProviderSubservices({ user }) {
                       <span className="ml-3 capitalize">{sub.pricing_type} pricing</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    <div className="text-right mr-4">
+                      {sub.provider_rate ? (
+                        <div>
+                          <div className="text-sm font-bold text-green-600">Your Rate: ₹{sub.provider_rate}</div>
+                          <div className="text-xs text-gray-500 line-through">System: ₹{sub.base_charge}</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm font-semibold text-gray-700">₹{sub.base_charge}</div>
+                      )}
+                    </div>
+
+                    {sub.created_by_provider_id !== provider.id && (
+                      <button
+                        onClick={() => openRateModal(sub)}
+                        className="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg text-sm hover:bg-blue-50"
+                      >
+                        Set Rate
+                      </button>
+                    )}
+
                     <button
                       onClick={() => startEdit(sub)}
                       disabled={sub.created_by_provider_id !== provider.id}
-                      className={`px-4 py-2 rounded-lg text-sm ${
-                        sub.created_by_provider_id === provider.id
-                          ? 'bg-blue-600 text-white hover:bg-blue-700'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      }`}
+                      className={`px-4 py-2 rounded-lg text-sm ${sub.created_by_provider_id === provider.id
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
                     >
-                      {sub.created_by_provider_id === provider.id ? 'Edit' : 'Read only'}
+                      {sub.created_by_provider_id === provider.id ? 'Edit' : 'System'}
                     </button>
                   </div>
                 </div>
@@ -373,6 +422,43 @@ export default function ProviderSubservices({ user }) {
           </section>
         )}
       </div>
+
+      {rateModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold mb-4">Set Your Rate</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Set your custom minimum rate for <strong>{rateModal.sub?.name}</strong>.
+              <br />
+              <span className="text-xs">System Base Rate: ₹{rateModal.sub?.base_charge}</span>
+            </p>
+            <form onSubmit={saveRate}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Rate (₹)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={rateModal.rate}
+                  onChange={(e) => setRateModal({ ...rateModal, rate: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Save</button>
+                <button
+                  type="button"
+                  onClick={() => setRateModal({ isOpen: false, sub: null, rate: '' })}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

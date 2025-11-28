@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -10,6 +9,7 @@ export default function ServiceManagement() {
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [showRequestModal, setShowRequestModal] = useState(false)
+    const [showAllServices, setShowAllServices] = useState(false) // New state for filtering
     const [requestForm, setRequestForm] = useState({
         service_name: '',
         category_id: '',
@@ -43,15 +43,26 @@ export default function ServiceManagement() {
         }
     }
 
+    // Filter services based on toggle
+    const filteredServices = showAllServices ? services : services.filter(s => s.is_enabled)
+
     const handleUpdate = async (service) => {
         try {
             const { data: { session } } = await supabase.auth.getSession()
+
+            // Prepare sub-service rates
+            const sub_service_rates = service.subservices?.map(sub => ({
+                sub_service_id: sub.id,
+                rate: sub.provider_rate || sub.base_charge // Default to base charge if no custom rate set yet
+            })) || []
+
             await axios.put('/api/provider/services', {
                 service_id: service.id,
                 is_enabled: service.is_enabled,
                 base_price: service.provider_price,
                 inspection_fee: service.inspection_fee,
-                emergency_fee: service.emergency_fee
+                emergency_fee: service.emergency_fee,
+                sub_service_rates
             }, {
                 headers: { Authorization: `Bearer ${session?.access_token}` }
             })
@@ -66,6 +77,20 @@ export default function ServiceManagement() {
         setServices(services.map(s =>
             s.id === id ? { ...s, [field]: value } : s
         ))
+    }
+
+    const handleSubServiceChange = (serviceId, subServiceId, value) => {
+        setServices(services.map(s => {
+            if (s.id === serviceId) {
+                return {
+                    ...s,
+                    subservices: s.subservices.map(sub =>
+                        sub.id === subServiceId ? { ...sub, provider_rate: value } : sub
+                    )
+                }
+            }
+            return s
+        }))
     }
 
     const handleRequestSubmit = async (e) => {
@@ -100,7 +125,17 @@ export default function ServiceManagement() {
             {/* Active Services Section */}
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800">My Services</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            {showAllServices ? 'All Available Services' : 'My Services'}
+                        </h2>
+                        <button
+                            onClick={() => setShowAllServices(!showAllServices)}
+                            className="px-3 py-1 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
+                        >
+                            {showAllServices ? 'Show My Services Only' : 'Browse All Services'}
+                        </button>
+                    </div>
                     <button
                         onClick={() => setShowRequestModal(true)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -120,7 +155,7 @@ export default function ServiceManagement() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {services.map(service => (
+                            {filteredServices.map(service => (
                                 <tr key={service.id} className={service.is_enabled ? 'bg-white' : 'bg-gray-50'}>
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-medium text-gray-900">{service.name}</div>
@@ -130,13 +165,22 @@ export default function ServiceManagement() {
                                         {service.subservices && service.subservices.length > 0 && (
                                             <div className="mt-2 pl-2 border-l-2 border-gray-200">
                                                 <div className="text-xs font-medium text-gray-500 mb-1">Sub-services:</div>
-                                                <ul className="text-xs text-gray-600 space-y-1">
+                                                <ul className="text-xs text-gray-600 space-y-2">
                                                     {service.subservices.map(sub => (
                                                         <li key={sub.id} className="flex items-center gap-2">
-                                                            <span>• {sub.name}</span>
-                                                            <span className="text-gray-400">
-                                                                (₹{sub.base_charge} {sub.pricing_type === 'hourly' ? '/hr' : ''})
-                                                            </span>
+                                                            <span className="w-32 truncate" title={sub.name}>• {sub.name}</span>
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-gray-400">₹</span>
+                                                                <input
+                                                                    type="number"
+                                                                    value={sub.provider_rate !== null ? sub.provider_rate : ''}
+                                                                    onChange={(e) => handleSubServiceChange(service.id, sub.id, e.target.value)}
+                                                                    placeholder="Rate"
+                                                                    className="w-20 px-2 py-1 text-xs border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                                    disabled={!service.is_enabled}
+                                                                />
+                                                                {sub.pricing_type === 'hourly' && <span className="text-gray-400">/hr</span>}
+                                                            </div>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -157,16 +201,6 @@ export default function ServiceManagement() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap align-top">
                                         <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs text-gray-500 w-20">Base:</label>
-                                                <input
-                                                    type="number"
-                                                    value={service.provider_price}
-                                                    onChange={(e) => handleChange(service.id, 'provider_price', parseFloat(e.target.value))}
-                                                    className="w-24 px-2 py-1 text-sm border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    disabled={!service.is_enabled}
-                                                />
-                                            </div>
                                             <div className="flex items-center gap-2">
                                                 <label className="text-xs text-gray-500 w-20">Inspection:</label>
                                                 <input
@@ -192,7 +226,8 @@ export default function ServiceManagement() {
                                     <td className="px-6 py-4 whitespace-nowrap align-top">
                                         <button
                                             onClick={() => handleUpdate(service)}
-                                            className="text-blue-600 hover:text-blue-900 font-medium text-sm"
+                                            disabled={!service.is_enabled}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Save
                                         </button>

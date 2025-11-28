@@ -168,7 +168,13 @@ export default function DocumentUpload() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 mr-4">View</a>
-                                    <button onClick={() => handleDelete(doc.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                                    {doc.status === 'verified' ? (
+                                        <span className="text-gray-400 cursor-not-allowed" title="Verified documents cannot be deleted">
+                                            🔒 Locked
+                                        </span>
+                                    ) : (
+                                        <button onClick={() => handleDelete(doc.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

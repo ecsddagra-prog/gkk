@@ -48,8 +48,26 @@ export default async function handler(req, res) {
                 return res.status(400).json({ error: 'ID is required' })
             }
 
-            // Only allow deleting if not verified (optional rule, but good for safety)
-            // Or just allow deleting anything. Let's allow deleting anything for now.
+            // First, check if the document exists and get its status
+            const { data: document, error: fetchError } = await supabaseAdmin
+                .from('provider_documents')
+                .select('status')
+                .eq('id', id)
+                .eq('provider_id', provider.id)
+                .single()
+
+            if (fetchError || !document) {
+                return res.status(404).json({ error: 'Document not found' })
+            }
+
+            // Prevent deletion of verified documents
+            if (document.status === 'verified') {
+                return res.status(403).json({
+                    error: 'Cannot delete verified documents. Contact admin if you need to update this document.'
+                })
+            }
+
+            // Allow deletion of pending or rejected documents
             const { error } = await supabaseAdmin
                 .from('provider_documents')
                 .delete()

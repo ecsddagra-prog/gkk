@@ -35,15 +35,8 @@ export default function AdminServices({ user }) {
     sub_services: []
   })
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login')
-      return
-    }
-    checkAdminAccess()
-  }, [user, checkAdminAccess, router])
-
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = React.useCallback(async () => {
+    if (!user) return
     try {
       const { data: profile } = await supabase
         .from('users')
@@ -59,7 +52,15 @@ export default function AdminServices({ user }) {
     } catch (error) {
       router.push('/dashboard')
     }
-  }
+  }, [user, router])
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    checkAdminAccess()
+  }, [user, router, checkAdminAccess])
 
   const loadData = async () => {
     try {
@@ -142,14 +143,14 @@ export default function AdminServices({ user }) {
         .from('service_subservices')
         .select('*, sub_subservices:service_sub_subservices(*)')
         .eq('service_id', service.id)
-        .eq('is_active', true)
+        .order('id')
       subservices = data || []
     } else {
       const { data } = await supabase
         .from('service_subservices')
         .select('*, sub_subservices:service_sub_subservices(*)')
         .eq('service_id', service.id)
-        .eq('is_active', true)
+        .order('id')
       subservices = data || []
     }
 
@@ -176,6 +177,154 @@ export default function AdminServices({ user }) {
       sub_services: formattedSubServices
     })
     setShowModal(true)
+  }
+
+  const deleteService = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) return
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const response = await axios.delete(`/api/admin/services/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.data.soft_deleted) {
+        toast.success(response.data.message, { icon: '⚠️' })
+      } else {
+        toast.success('Service deleted successfully')
+      }
+      loadData()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to delete service')
+    }
+  }
+
+  const toggleServiceStatus = async (service) => {
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      await axios.put(`/api/admin/services/${service.id}`, {
+        is_active: !service.is_active
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      toast.success(`Service ${!service.is_active ? 'activated' : 'deactivated'}`)
+      loadData()
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  const deleteSubService = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this variant?')) return
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const response = await axios.delete(`/api/admin/sub-services/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.data.soft_deleted) {
+        toast.success(response.data.message, { icon: '⚠️' })
+      } else {
+        toast.success('Variant deleted successfully')
+      }
+      loadData()
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to delete variant')
+    }
+  }
+
+  const toggleSubServiceStatus = async (sub) => {
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      await axios.patch(`/api/admin/sub-services/${sub.id}`, {
+        is_active: !sub.is_active
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      toast.success(`Variant ${!sub.is_active ? 'activated' : 'deactivated'}`)
+      loadData()
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  const ActionMenu = ({ onEdit, onToggle, onDelete, isActive, type = 'Service' }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const buttonRef = React.useRef(null)
+    const [menuStyle, setMenuStyle] = useState({})
+
+    const toggleMenu = (e) => {
+      e.stopPropagation()
+      if (isOpen) {
+        setIsOpen(false)
+        return
+      }
+
+      const rect = buttonRef.current.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const spaceBelow = windowHeight - rect.bottom
+      const menuHeight = 150 // Approx height
+
+      // Decide whether to show above or below
+      const showAbove = spaceBelow < menuHeight
+
+      setMenuStyle({
+        position: 'fixed',
+        top: showAbove ? (rect.top - menuHeight) : (rect.bottom + 5),
+        left: rect.right - 192, // 192px = w-48
+        zIndex: 9999 // Ensure it's on top of everything
+      })
+      setIsOpen(true)
+    }
+
+    // Close on scroll or resize
+    useEffect(() => {
+      const handleScroll = () => { if (isOpen) setIsOpen(false) }
+      window.addEventListener('scroll', handleScroll, true)
+      window.addEventListener('resize', handleScroll)
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true)
+        window.removeEventListener('resize', handleScroll)
+      }
+    }, [isOpen])
+
+    return (
+      <div className="relative">
+        <button
+          ref={buttonRef}
+          onClick={toggleMenu}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <span className="text-xl font-bold text-gray-500">⋮</span>
+        </button>
+
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-[9998]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+            <div
+              className="fixed bg-white rounded-md shadow-lg border border-gray-100 py-1 w-48"
+              style={menuStyle}
+            >
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsOpen(false); onEdit(); }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Edit {type}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsOpen(false); onToggle(); }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                {isActive ? 'Deactivate' : 'Activate'} {type}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsOpen(false); onDelete(); }}
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                Delete {type}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    )
   }
 
   const toggleServiceExpand = (serviceId) => {
@@ -260,11 +409,11 @@ export default function AdminServices({ user }) {
             <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">No services found</div>
           ) : (
             filteredGroups.map(group => (
-              <div key={group.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div key={group.id} className="bg-white rounded-lg shadow-md overflow-visible">
                 <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 cursor-pointer hover:from-blue-700 hover:to-blue-800 transition-colors" onClick={() => toggleCategoryExpand(group.id)}>
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                      <span className="text-xl transition-transform" style={{ transform: expandedCategories[group.id] === false ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+                      <span className="text-xl transition-transform" style={{ transform: expandedCategories[group.id] === true ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
                       {group.icon && <span className="text-2xl">{group.icon}</span>}
                       {group.name}
                     </h2>
@@ -273,7 +422,7 @@ export default function AdminServices({ user }) {
                   {group.description && <p className="text-blue-100 text-sm mt-2">{group.description}</p>}
                 </div>
 
-                {expandedCategories[group.id] !== false && (
+                {expandedCategories[group.id] === true && (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -317,7 +466,13 @@ export default function AdminServices({ user }) {
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-sm font-medium">
-                                <button onClick={() => handleEdit(service)} className="text-blue-600 hover:text-blue-900">Edit</button>
+                                <ActionMenu
+                                  onEdit={() => handleEdit(service)}
+                                  onToggle={() => toggleServiceStatus(service)}
+                                  onDelete={() => deleteService(service.id)}
+                                  isActive={service.is_active}
+                                  type="Service"
+                                />
                               </td>
                             </tr>
                             {expandedServices[service.id] && service.subservices && service.subservices.length > 0 && (
@@ -332,6 +487,7 @@ export default function AdminServices({ user }) {
                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Price</th>
                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Image</th>
                                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Status</th>
+                                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Actions</th>
                                         </tr>
                                       </thead>
                                       <tbody className="bg-white divide-y divide-gray-200">
@@ -346,6 +502,15 @@ export default function AdminServices({ user }) {
                                               <span className={`px-2 py-1 text-xs rounded-full ${sub.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {sub.is_active ? 'Active' : 'Inactive'}
                                               </span>
+                                            </td>
+                                            <td className="px-4 py-2 text-sm font-medium">
+                                              <ActionMenu
+                                                onEdit={() => handleEdit(service)}
+                                                onToggle={() => toggleSubServiceStatus(sub)}
+                                                onDelete={() => deleteSubService(sub.id)}
+                                                isActive={sub.is_active}
+                                                type="Variant"
+                                              />
                                             </td>
                                           </tr>
                                         ))}
@@ -519,6 +684,20 @@ export default function AdminServices({ user }) {
                         </button>
                       </div>
 
+                      <div className="flex items-center mb-3">
+                        <input
+                          type="checkbox"
+                          checked={sub.is_active !== false} // Default to true if undefined
+                          onChange={(e) => {
+                            const newSubs = [...formData.sub_services]
+                            newSubs[index].is_active = e.target.checked
+                            setFormData({ ...formData, sub_services: newSubs })
+                          }}
+                          className="mr-2 h-4 w-4 text-blue-600"
+                        />
+                        <label className="text-sm text-gray-700">Active</label>
+                      </div>
+
                       {/* Sub-Sub Services Section */}
                       <div className="ml-4 pl-4 border-l-2 border-gray-100 mt-4">
                         <div className="flex justify-between items-center mb-2">
@@ -622,6 +801,6 @@ export default function AdminServices({ user }) {
           </div>
         </div>
       )}
-    </div>
+    </div >
   )
 }

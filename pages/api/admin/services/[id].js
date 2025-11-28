@@ -51,22 +51,69 @@ export default async function handler(req, res) {
 
       // Handle sub-services update if provided
       if (sub_services && Array.isArray(sub_services)) {
-        // Delete existing sub-services (cascade will handle sub-sub-services if configured, 
-        // but we should be careful. Assuming ON DELETE CASCADE on DB side for sub-sub-services)
-        // If not, we might need to delete sub-sub-services explicitly first.
-        // For now, let's assume standard cascade or we can do a quick check/delete.
-
-        // Explicitly deleting sub-services. 
-        // Note: This changes IDs.
-        await supabaseAdmin
+        // Get existing sub-services
+        const { data: existingSubServices } = await supabaseAdmin
           .from('service_subservices')
-          .delete()
+          .select('id, name')
           .eq('service_id', id)
 
-        // Insert new sub-services
-        if (sub_services.length > 0) {
-          for (const sub of sub_services) {
-            // Create sub-service
+        const existingSubServiceIds = (existingSubServices || []).map(s => s.id)
+        const processedIds = []
+
+        // Process each sub-service from the form
+        for (const sub of sub_services) {
+          // Skip if name or base_charge is empty
+          if (!sub.name || !sub.base_charge) {
+            continue
+          }
+
+          // Check if this sub-service already exists (by ID)
+          if (sub.id && existingSubServiceIds.includes(sub.id)) {
+            // UPDATE existing sub-service
+            const { error: updateError } = await supabaseAdmin
+              .from('service_subservices')
+              .update({
+                name: sub.name,
+                base_charge: sub.base_charge || 0,
+                image_url: sub.image_url || null,
+                is_active: sub.is_active !== undefined ? sub.is_active : true
+              })
+              .eq('id', sub.id)
+
+            if (updateError) {
+              console.error('Error updating sub-service:', updateError)
+              continue
+            }
+
+            processedIds.push(sub.id)
+
+            // Handle sub-sub-services for existing sub-service
+            // Delete old sub-sub-services and insert new ones
+            await supabaseAdmin
+              .from('service_sub_subservices')
+              .delete()
+              .eq('sub_service_id', sub.id)
+
+            if (sub.sub_subservices && Array.isArray(sub.sub_subservices) && sub.sub_subservices.length > 0) {
+              const validSubSubServices = sub.sub_subservices.filter(subSub => subSub.name && subSub.base_charge)
+
+              if (validSubSubServices.length > 0) {
+                const subSubServicesPayload = validSubSubServices.map(subSub => ({
+                  sub_service_id: sub.id,
+                  name: subSub.name,
+                  description: subSub.description || null,
+                  base_charge: subSub.base_charge || 0,
+                  image_url: subSub.image_url || null,
+                  is_active: subSub.is_active !== undefined ? subSub.is_active : true
+                }))
+
+                await supabaseAdmin
+                  .from('service_sub_subservices')
+                  .insert(subSubServicesPayload)
+              }
+            }
+          } else {
+            // INSERT new sub-service
             const { data: createdSubService, error: subError } = await supabaseAdmin
               .from('service_subservices')
               .insert({
@@ -74,7 +121,7 @@ export default async function handler(req, res) {
                 name: sub.name,
                 base_charge: sub.base_charge || 0,
                 image_url: sub.image_url || null,
-                is_active: true
+                is_active: sub.is_active !== undefined ? sub.is_active : true
               })
               .select()
               .single()
@@ -84,26 +131,44 @@ export default async function handler(req, res) {
               continue
             }
 
-            // Create sub-sub-services for this sub-service
-            if (sub.sub_subservices && Array.isArray(sub.sub_subservices) && sub.sub_subservices.length > 0) {
-              const subSubServicesPayload = sub.sub_subservices.map(subSub => ({
-                sub_service_id: createdSubService.id,
-                name: subSub.name,
-                description: subSub.description || null,
-                base_charge: subSub.base_charge || 0,
-                image_url: subSub.image_url || null,
-                is_active: true
-              }))
+            if (createdSubService) {
+              processedIds.push(createdSubService.id)
 
-              const { error: subSubError } = await supabaseAdmin
-                .from('service_sub_subservices')
-                .insert(subSubServicesPayload)
+              // Create sub-sub-services for new sub-service
+              if (sub.sub_subservices && Array.isArray(sub.sub_subservices) && sub.sub_subservices.length > 0) {
+                const validSubSubServices = sub.sub_subservices.filter(subSub => subSub.name && subSub.base_charge)
 
-              if (subSubError) {
-                console.error('Error creating sub-sub-services:', subSubError)
+                if (validSubSubServices.length > 0) {
+                  const subSubServicesPayload = validSubSubServices.map(subSub => ({
+                    sub_service_id: createdSubService.id,
+                    name: subSub.name,
+                    description: subSub.description || null,
+                    base_charge: subSub.base_charge || 0,
+                    image_url: subSub.image_url || null,
+                    is_active: subSub.is_active !== undefined ? subSub.is_active : true
+                  }))
+
+                  const { error: subSubError } = await supabaseAdmin
+                    .from('service_sub_subservices')
+                    .insert(subSubServicesPayload)
+
+                  if (subSubError) {
+                    console.error('Error creating sub-sub-services:', subSubError)
+                  }
+                }
               }
             }
           }
+        }
+
+        // Mark unused sub-services as inactive instead of deleting them
+        // (to preserve foreign key references in rate_quotes)
+        const unusedSubServiceIds = existingSubServiceIds.filter(subId => !processedIds.includes(subId))
+        if (unusedSubServiceIds.length > 0) {
+          await supabaseAdmin
+            .from('service_subservices')
+            .update({ is_active: false })
+            .in('id', unusedSubServiceIds)
         }
       }
 
@@ -121,6 +186,29 @@ export default async function handler(req, res) {
       return res.status(200).json({ service })
     }
 
+    if (req.method === 'DELETE') {
+      const { error } = await supabaseAdmin
+        .from('services')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        if (error.code === '23503') {
+          await supabaseAdmin
+            .from('services')
+            .update({ is_active: false })
+            .eq('id', id)
+
+          return res.status(200).json({
+            message: 'Service has existing bookings/records. It has been deactivated instead of permanently deleted.',
+            soft_deleted: true
+          })
+        }
+        throw error
+      }
+      return res.status(200).json({ message: 'Service deleted successfully' })
+    }
+
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
     console.error('Admin service update error:', error)
@@ -128,4 +216,3 @@ export default async function handler(req, res) {
     return res.status(status).json({ error: error.message })
   }
 }
-
