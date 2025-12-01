@@ -27,8 +27,20 @@ export default async function handler(req, res) {
             .eq('id', user.id)
             .single()
 
+        console.log('Admin Users API Debug:', {
+            userId: user.id,
+            role: profile?.role,
+            hasProfile: !!profile
+        })
+
         if (!profile || profile.role !== 'superadmin') {
-            return res.status(403).json({ error: 'Forbidden' })
+            return res.status(403).json({
+                error: 'Forbidden',
+                debug: {
+                    userId: user.id,
+                    role: profile?.role
+                }
+            })
         }
 
         // Fetch admins

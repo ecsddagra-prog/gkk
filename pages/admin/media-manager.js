@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function MediaManager({ user }) {
     const router = useRouter()
@@ -137,7 +138,13 @@ export default function MediaManager({ user }) {
                         <div key={file.key} className="bg-white rounded-lg shadow overflow-hidden group relative">
                             <div className="aspect-square bg-gray-100 relative">
                                 {file.key.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                    <img src={file.url} alt={file.key} className="w-full h-full object-cover" />
+                                    <Image
+                                        src={file.url}
+                                        alt={file.key}
+                                        className="object-cover"
+                                        fill
+                                        unoptimized
+                                    />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-4xl">
                                         📄

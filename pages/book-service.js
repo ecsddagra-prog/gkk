@@ -32,6 +32,7 @@ export default function BookService({ user }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
+  const [providerCount, setProviderCount] = useState({ count: 0, enabled: false })
 
   useEffect(() => {
     if (!user) {
@@ -126,6 +127,29 @@ export default function BookService({ user }) {
       toast.error(error.response?.data?.error || 'Failed to load services')
     } finally {
       setServicesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedServiceId && selectedCity) {
+      fetchProviderCount()
+    } else {
+      setProviderCount({ count: 0, enabled: false })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedServiceId, selectedCity])
+
+  const fetchProviderCount = async () => {
+    try {
+      const { data } = await axios.get('/api/bookings/provider-count', {
+        params: {
+          service_id: selectedServiceId,
+          city_id: selectedCity
+        }
+      })
+      setProviderCount(data)
+    } catch (error) {
+      console.error('Error fetching provider count:', error)
     }
   }
 
@@ -498,6 +522,21 @@ export default function BookService({ user }) {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Provider Count Notification */}
+          {selectedServiceId && providerCount.enabled && providerCount.count > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 animate-pulse">
+              <span className="text-2xl">👨‍🔧</span>
+              <div>
+                <p className="text-green-800 font-medium">
+                  {providerCount.count} {providerCount.count === 1 ? 'provider is' : 'providers are'} online right now!
+                </p>
+                <p className="text-green-600 text-sm">
+                  Book now for a quick response.
+                </p>
+              </div>
             </div>
           )}
 

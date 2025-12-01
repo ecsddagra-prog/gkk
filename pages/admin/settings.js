@@ -352,6 +352,42 @@ export default function AdminSettings({ user }) {
               </div>
             </div>
           </div>
+          {/* Booking Settings */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4">Booking Settings</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Show Online Provider Count
+                    {settings.show_provider_count?._isInherited && selectedService && (
+                      <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Global Default</span>
+                    )}
+                  </label>
+                  <p className="text-sm text-gray-500">Show users how many providers are online when booking</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      const newValue = !settings.show_provider_count?.value
+                      setSettings({
+                        ...settings,
+                        show_provider_count: { value: newValue }
+                      })
+                      updateSetting('show_provider_count', { value: newValue })
+                    }}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${settings.show_provider_count?.value ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.show_provider_count?.value ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
