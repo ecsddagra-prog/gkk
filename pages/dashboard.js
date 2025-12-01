@@ -23,12 +23,25 @@ export default function Dashboard({ user }) {
 
   const loadData = async () => {
     try {
+      // Check if session still exists before making queries
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+        return
+      }
+
       // Load user profile
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single()
+
+      // If error or no profile data, redirect to login
+      if (profileError || !profileData) {
+        router.push('/login')
+        return
+      }
 
       setProfile(profileData)
 
@@ -67,15 +80,32 @@ export default function Dashboard({ user }) {
       setBookings(bookingsData || [])
     } catch (error) {
       console.error('Error loading data:', error)
-      toast.error('Failed to load data')
+      // Don't show error toast if it's just a session issue
+      if (!error.message?.includes('session')) {
+        toast.error('Failed to load data')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    try {
+      // Force clear local session storage
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const projectRef = supabaseUrl.split('//')[1].split('.')[0]
+      localStorage.removeItem(`sb-${projectRef}-auth-token`)
+
+      // Set session to null
+      await supabase.auth.setSession({
+        access_token: null,
+        refresh_token: null
+      })
+    } catch (error) {
+      console.log('Logout error:', error.message)
+    }
+    // Force full page reload
+    window.location.reload()
   }
 
   if (loading) {

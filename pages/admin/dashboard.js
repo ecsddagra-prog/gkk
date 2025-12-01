@@ -102,9 +102,23 @@ export default function AdminDashboard({ user }) {
                 </Link>
               )}
               <button
-                onClick={() => {
-                  supabase.auth.signOut()
-                  router.push('/')
+                onClick={async () => {
+                  try {
+                    // Force clear local session storage
+                    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+                    const projectRef = supabaseUrl.split('//')[1].split('.')[0]
+                    localStorage.removeItem(`sb-${projectRef}-auth-token`)
+
+                    // Set session to null
+                    await supabase.auth.setSession({
+                      access_token: null,
+                      refresh_token: null
+                    })
+                  } catch (error) {
+                    console.log('Logout error:', error.message)
+                  }
+                  // Force full page reload
+                  window.location.reload()
                 }}
                 className="px-4 py-2 text-gray-700 hover:text-red-600"
               >
@@ -200,4 +214,3 @@ export default function AdminDashboard({ user }) {
     </div>
   )
 }
-
