@@ -18,6 +18,8 @@ export default function ProviderSubservices({ user }) {
   const router = useRouter()
   const [provider, setProvider] = useState(null)
   const [services, setServices] = useState([])
+  const [categories, setCategories] = useState([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [subservices, setSubservices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -63,7 +65,8 @@ export default function ProviderSubservices({ user }) {
       if (data.business_subcategory_id) {
         const { data: service } = await supabase
           .from('services')
-          .select('id, name, category:service_categories(name)')
+          .from('services')
+          .select('id, name, category:service_categories(id, name)')
           .eq('id', data.business_subcategory_id)
           .single()
 
@@ -74,7 +77,8 @@ export default function ProviderSubservices({ user }) {
 
       const { data: mapped } = await supabase
         .from('provider_services')
-        .select('service:services(id, name, category:service_categories(name))')
+        .from('provider_services')
+        .select('service:services(id, name, category:service_categories(id, name))')
         .eq('provider_id', data.id)
 
       mapped?.forEach(item => {
@@ -84,9 +88,19 @@ export default function ProviderSubservices({ user }) {
       })
 
       setServices(servicesList)
-      if (servicesList.length > 0) {
-        setSelectedServiceId(servicesList[0].id)
-      }
+
+      // Extract unique categories
+      const uniqueCategories = []
+      const seenCategoryIds = new Set()
+
+      servicesList.forEach(service => {
+        if (service.category && !seenCategoryIds.has(service.category.id)) {
+          seenCategoryIds.add(service.category.id)
+          uniqueCategories.push(service.category)
+        }
+      })
+      setCategories(uniqueCategories)
+
     } catch (error) {
       console.error('Provider fetch error:', error)
       toast.error('Failed to load provider info')
@@ -205,6 +219,17 @@ export default function ProviderSubservices({ user }) {
     [services, selectedServiceId]
   )
 
+  const filteredServices = useMemo(() => {
+    if (!selectedCategoryId) return []
+    return services.filter(s => s.category?.id === selectedCategoryId)
+  }, [services, selectedCategoryId])
+
+  const handleCategoryChange = (e) => {
+    const catId = e.target.value
+    setSelectedCategoryId(catId)
+    setSelectedServiceId('') // Reset service when category changes
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -235,16 +260,33 @@ export default function ProviderSubservices({ user }) {
         <section className="bg-white rounded-lg shadow-md p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
+              <select
+                value={selectedCategoryId}
+                onChange={handleCategoryChange}
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="">Choose category</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Service</label>
               <select
                 value={selectedServiceId}
                 onChange={(e) => setSelectedServiceId(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg"
+                disabled={!selectedCategoryId}
               >
                 <option value="">Choose service</option>
-                {services.map(service => (
+                {filteredServices.map(service => (
                   <option key={service.id} value={service.id}>
-                    {service.name}{service.category?.name ? ` • ${service.category.name}` : ''}
+                    {service.name}
                   </option>
                 ))}
               </select>
