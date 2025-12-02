@@ -5,11 +5,13 @@ import { useRouter } from 'next/router'
 export default function ProviderLayout({ children, activeModule, setActiveModule }) {
     const menuItems = [
         { id: 'profile', label: 'My Profile', icon: '👤' },
+        { id: 'bookings', label: 'My Bookings', icon: '📋', link: '/provider/bookings' },
         { id: 'services', label: 'Service Management', icon: '🛠️' },
         { id: 'location-management', label: 'Location Management', icon: '📍' },
         { id: 'pricing', label: 'Service Charges', icon: '💰' },
         { id: 'portfolio', label: 'Experience & Portfolio', icon: '👨‍💼' },
         { id: 'documents', label: 'License & KYC', icon: '📄' },
+        { id: 'payment-settings', label: 'Payment Settings', icon: '💳' },
         { id: 'staff', label: 'Staff Management', icon: '👥' },
         { id: 'earnings', label: 'Earnings & Reviews', icon: '📊' },
     ]
@@ -23,17 +25,28 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
                 </div>
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {menuItems.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveModule(item.id)}
-                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeModule === item.id
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <span className="text-xl">{item.icon}</span>
-                            <span>{item.label}</span>
-                        </button>
+                        item.link ? (
+                            <Link
+                                key={item.id}
+                                href={item.link}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-gray-600 hover:bg-gray-50"
+                            >
+                                <span className="text-xl">{item.icon}</span>
+                                <span>{item.label}</span>
+                            </Link>
+                        ) : (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveModule(item.id)}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeModule === item.id
+                                    ? 'bg-blue-50 text-blue-600 font-medium'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <span className="text-xl">{item.icon}</span>
+                                <span>{item.label}</span>
+                            </button>
+                        )
                     ))}
                 </nav>
                 <div className="p-4 border-t bg-gray-50">

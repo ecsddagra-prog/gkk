@@ -3,6 +3,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
 import ImageUpload from '../ImageUpload'
+import ChangeRequestModal from './ChangeRequestModal'
 
 export default function DocumentUpload() {
     const [loading, setLoading] = useState(true)
@@ -13,6 +14,7 @@ export default function DocumentUpload() {
         document_url: ''
     })
     const [uploading, setUploading] = useState(false)
+    const [changeRequestModal, setChangeRequestModal] = useState({ open: false, document: null })
 
     useEffect(() => {
         fetchDocuments()
@@ -70,6 +72,18 @@ export default function DocumentUpload() {
             console.error('Error deleting document:', error)
             toast.error('Failed to delete document')
         }
+    }
+
+    const openChangeRequestModal = (doc) => {
+        setChangeRequestModal({ open: true, document: doc })
+    }
+
+    const closeChangeRequestModal = () => {
+        setChangeRequestModal({ open: false, document: null })
+    }
+
+    const handleChangeRequestSuccess = () => {
+        fetchDocuments()
     }
 
     const getStatusBadge = (status) => {
@@ -166,12 +180,15 @@ export default function DocumentUpload() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {new Date(doc.created_at).toLocaleDateString()}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900 mr-4">View</a>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
+                                    <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900">View</a>
                                     {doc.status === 'verified' ? (
-                                        <span className="text-gray-400 cursor-not-allowed" title="Verified documents cannot be deleted">
-                                            🔒 Locked
-                                        </span>
+                                        <button
+                                            onClick={() => openChangeRequestModal(doc)}
+                                            className="text-orange-600 hover:text-orange-900"
+                                        >
+                                            Request Change
+                                        </button>
                                     ) : (
                                         <button onClick={() => handleDelete(doc.id)} className="text-red-600 hover:text-red-900">Delete</button>
                                     )}
@@ -186,6 +203,15 @@ export default function DocumentUpload() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Change Request Modal */}
+            {changeRequestModal.open && (
+                <ChangeRequestModal
+                    document={changeRequestModal.document}
+                    onClose={closeChangeRequestModal}
+                    onSuccess={handleChangeRequestSuccess}
+                />
+            )}
         </div>
     )
 }

@@ -11,7 +11,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { booking_id, user_id, rating, review_text, review_photos } = req.body
+    const {
+      booking_id,
+      user_id,
+      rating, // Overall rating
+      review_text,
+      review_photos,
+      behavior_rating,
+      nature_rating,
+      work_knowledge_rating,
+      work_quality_rating,
+      punctuality_rating
+    } = req.body
 
     if (!booking_id || !user_id || !rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Invalid rating data' })
@@ -50,24 +61,45 @@ export default async function handler(req, res) {
         provider_id: booking.provider_id,
         rating,
         review_text,
-        review_photos: review_photos || []
+        review_photos: review_photos || [],
+        behavior_rating,
+        nature_rating,
+        work_knowledge_rating,
+        work_quality_rating,
+        punctuality_rating
       })
       .select()
       .single()
 
     if (ratingError) throw ratingError
 
-    // Check for low ratings and suspend if needed
+    // Update provider's average rating
     if (booking.provider_id) {
       const { data: allRatings } = await supabaseAdmin
+        .from('ratings')
+        .select('rating')
+        .eq('provider_id', booking.provider_id)
+
+      if (allRatings && allRatings.length > 0) {
+        const totalRating = allRatings.reduce((sum, r) => sum + r.rating, 0)
+        const avgRating = totalRating / allRatings.length
+
+        await supabaseAdmin
+          .from('providers')
+          .update({ rating: avgRating })
+          .eq('id', booking.provider_id)
+      }
+
+      // Check for low ratings and suspend if needed
+      const { data: recentRatings } = await supabaseAdmin
         .from('ratings')
         .select('rating')
         .eq('provider_id', booking.provider_id)
         .order('created_at', { ascending: false })
         .limit(3)
 
-      if (allRatings && allRatings.length >= 3) {
-        const shouldSuspend = checkLowRating(allRatings)
+      if (recentRatings && recentRatings.length >= 3) {
+        const shouldSuspend = checkLowRating(recentRatings)
 
         if (shouldSuspend) {
           const { data: settings } = await supabaseAdmin

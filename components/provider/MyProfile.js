@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/router'
+import toast from 'react-hot-toast'
 
 export default function MyProfile() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [uploading, setUploading] = useState(false)
     const [profile, setProfile] = useState({
         full_name: '',
         email: '',
         phone: '',
         business_name: '',
+        avatar_url: '',
         created_at: ''
     })
     const [message, setMessage] = useState({ type: '', text: '' })
@@ -27,7 +30,7 @@ export default function MyProfile() {
                 return
             }
 
-            // Get public user data (full_name, phone)
+            // Get public user data (full_name, phone, avatar_url)
             const { data: publicUserData, error: userError } = await supabase
                 .from('users')
                 .select('*')
@@ -49,6 +52,7 @@ export default function MyProfile() {
                 full_name: publicUserData?.full_name || '',
                 email: publicUserData?.email || session.user.email || '',
                 phone: publicUserData?.phone || '',
+                avatar_url: publicUserData?.avatar_url || '',
                 business_name: providerData?.business_name || '',
                 created_at: providerData?.created_at || publicUserData?.created_at || ''
             })
@@ -58,6 +62,50 @@ export default function MyProfile() {
             setMessage({ type: 'error', text: 'Failed to load profile' })
         } finally {
             setLoading(false)
+        }
+    }
+
+    async function handleAvatarUpload(e) {
+        try {
+            setUploading(true)
+            if (!e.target.files || e.target.files.length === 0) {
+                throw new Error('You must select an image to upload.')
+            }
+
+            const file = e.target.files[0]
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Math.random()}.${fileExt}`
+            const filePath = `${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file)
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath)
+
+            // Update local state
+            setProfile(prev => ({ ...prev, avatar_url: publicUrl }))
+
+            // Update database immediately
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+                await supabase
+                    .from('users')
+                    .update({ avatar_url: publicUrl })
+                    .eq('id', session.user.id)
+            }
+
+            toast.success('Profile image updated!')
+
+        } catch (error) {
+            console.error('Error uploading avatar:', error)
+            toast.error('Error uploading avatar')
+        } finally {
+            setUploading(false)
         }
     }
 
@@ -123,8 +171,8 @@ export default function MyProfile() {
         <div className="max-w-4xl">
             {message.text && (
                 <div className={`fixed top-20 right-4 z-50 px-6 py-4 rounded-lg shadow-xl border animate-slideIn ${message.type === 'error'
-                        ? 'bg-red-50 text-red-700 border-red-200'
-                        : 'bg-green-50 text-green-700 border-green-200'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-green-50 text-green-700 border-green-200'
                     }`}>
                     <div className="flex items-center gap-2">
                         {message.type === 'error' ? (
@@ -146,8 +194,36 @@ export default function MyProfile() {
                 <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                                {profile.full_name?.charAt(0)?.toUpperCase() || 'P'}
+                            <div className="relative group">
+                                {profile.avatar_url ? (
+                                    <img
+                                        src={profile.avatar_url}
+                                        alt="Profile"
+                                        className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"
+                                    />
+                                ) : (
+                                    <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold border-2 border-white shadow-md">
+                                        {profile.full_name?.charAt(0)?.toUpperCase() || 'P'}
+                                    </div>
+                                )}
+                                <label className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200">
+                                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleAvatarUpload}
+                                        disabled={uploading}
+                                    />
+                                </label>
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-800">{profile.full_name || 'Provider'}</h2>
