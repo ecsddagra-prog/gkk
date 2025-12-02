@@ -13,12 +13,45 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Get auth token from request
+        const authHeader = req.headers.authorization
+        if (!authHeader) {
+            return res.status(401).json({ error: 'No authorization header' })
+        }
+
+        const token = authHeader.replace('Bearer ', '')
+
+        // Verify the user
+        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+        if (authError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' })
+        }
+
+        // First, get the booking to check permissions
+        const { data: existingBooking, error: fetchError } = await supabaseAdmin
+            .from('bookings')
+            .select('*, provider:providers(user_id)')
+            .eq('id', id)
+            .single()
+
+        if (fetchError || !existingBooking) {
+            return res.status(404).json({ error: 'Booking not found' })
+        }
+
+        // Check if user is either the customer or the assigned provider
+        const isCustomer = existingBooking.user_id === user.id
+        const isProvider = existingBooking.provider?.user_id === user.id
+
+        if (!isCustomer && !isProvider) {
+            return res.status(403).json({ error: 'You do not have permission to update this booking' })
+        }
+
         // 1. Update booking status
         const { data: booking, error: updateError } = await supabaseAdmin
             .from('bookings')
             .update({ status })
             .eq('id', id)
-            .select('*, user:users(*), provider:providers(*)')
+            .select('*, user:users(id, full_name), service:services(name)')
             .single()
 
         if (updateError) throw updateError

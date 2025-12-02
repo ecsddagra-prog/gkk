@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../../lib/supabase'
+import { supabaseAdmin } from '../../../../lib/supabase'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
             .update({
                 final_agreed_price: booking.user_quoted_price,
                 quote_status: 'accepted',
-                status: 'accepted'
+                status: 'confirmed'
             })
             .eq('id', booking_id)
 

@@ -214,6 +214,7 @@ export default async function handler(req, res) {
       sub_service_id: selectedSubServices.length > 0 ? selectedSubServices[0].id : null,
       sub_service_name: bookingSubServiceName,
       base_charge: totalBaseCharge,
+      final_price: user_quoted_price ? null : totalBaseCharge,
       for_whom
     }
 

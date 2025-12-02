@@ -13,6 +13,7 @@ export default async function handler(req, res) {
                     id, 
                     status, 
                     final_price, 
+                    base_charge,
                     payment_status, 
                     created_at, 
                     service:services(name)
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
             }
 
             bookings.forEach(booking => {
-                const price = parseFloat(booking.final_price || 0)
+                const price = parseFloat(booking.final_price || booking.base_charge || 0)
 
                 if (booking.status === 'completed') {
                     orderCounts.completed++
