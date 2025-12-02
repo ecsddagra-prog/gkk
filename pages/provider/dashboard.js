@@ -10,6 +10,7 @@ import ExperiencePortfolio from '../../components/provider/ExperiencePortfolio'
 import DocumentUpload from '../../components/provider/DocumentUpload'
 import StaffManagement from '../../components/provider/StaffManagement'
 import Earnings from '../../components/provider/Earnings'
+import PaymentSettings from '../../components/provider/PaymentSettings'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
@@ -62,6 +63,7 @@ export default function ProviderDashboard({ user }) {
       case 'documents': return <DocumentUpload />
       case 'staff': return <StaffManagement />
       case 'earnings': return <Earnings user={user} />
+      case 'payment-settings': return <PaymentSettings />
       default: return <Earnings user={user} />
     }
   }

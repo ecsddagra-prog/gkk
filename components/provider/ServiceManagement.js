@@ -10,6 +10,7 @@ export default function ServiceManagement() {
     const [loading, setLoading] = useState(true)
     const [showRequestModal, setShowRequestModal] = useState(false)
     const [showAllServices, setShowAllServices] = useState(false) // New state for filtering
+    const [selectedCategory, setSelectedCategory] = useState('') // New state for category filtering
     const [requestForm, setRequestForm] = useState({
         service_name: '',
         category_id: '',
@@ -43,8 +44,9 @@ export default function ServiceManagement() {
         }
     }
 
-    // Filter services based on toggle
-    const filteredServices = showAllServices ? services : services.filter(s => s.is_enabled)
+    // Filter services based on toggle and category
+    const filteredServices = (showAllServices ? services : services.filter(s => s.is_enabled))
+        .filter(s => !selectedCategory || s.category_id === selectedCategory)
 
     const handleUpdate = async (service) => {
         try {
@@ -129,12 +131,24 @@ export default function ServiceManagement() {
                         <h2 className="text-xl font-semibold text-gray-800">
                             {showAllServices ? 'All Available Services' : 'My Services'}
                         </h2>
-                        <button
-                            onClick={() => setShowAllServices(!showAllServices)}
-                            className="px-3 py-1 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
-                        >
-                            {showAllServices ? 'Show My Services Only' : 'Browse All Services'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">All Categories</option>
+                                {categories.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={() => setShowAllServices(!showAllServices)}
+                                className="px-3 py-1 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
+                            >
+                                {showAllServices ? 'Show My Services Only' : 'Browse All Services'}
+                            </button>
+                        </div>
                     </div>
                     <button
                         onClick={() => setShowRequestModal(true)}
