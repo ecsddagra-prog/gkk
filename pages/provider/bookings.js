@@ -12,6 +12,11 @@ export default function ProviderBookings({ user }) {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('cash')
 
   useEffect(() => {
     if (!user) {
@@ -75,9 +80,12 @@ export default function ProviderBookings({ user }) {
 
   const updateStatus = async (bookingId, newStatus) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       await axios.patch(`/api/bookings/${bookingId}/status`, {
         status: newStatus,
         changed_by: user.id
+      }, {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
       })
       toast.success(`Booking marked as ${getStatusLabel(newStatus)}`)
       loadData()
@@ -94,6 +102,53 @@ export default function ProviderBookings({ user }) {
     // unless there's specific logic in complete.js we need.
     // Actually, let's use the new status API for all status changes to ensure history is tracked.
     updateStatus(bookingId, 'completed')
+  }
+
+  const handlePaymentConfirm = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await axios.post('/api/provider/bookings/confirm-payment', {
+        booking_id: selectedBooking.id,
+        payment_method: paymentMethod
+      }, {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+
+      toast.success('Payment confirmed successfully')
+      setShowPaymentModal(false)
+      setSelectedBooking(null)
+      loadData()
+    } catch (error) {
+      console.error('Payment confirmation error:', error)
+      toast.error('Failed to confirm payment')
+    }
+  }
+
+  const handleCancelBooking = async (e) => {
+    e.preventDefault()
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a reason for cancellation')
+      return
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await axios.post('/api/provider/bookings/release', {
+        booking_id: selectedBooking.id,
+        reason: cancelReason
+      }, {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+
+      toast.success('Booking cancelled and released to pool')
+      setShowCancelModal(false)
+      setCancelReason('')
+      setSelectedBooking(null)
+      loadData()
+    } catch (error) {
+      console.error('Cancel booking error:', error)
+      toast.error(error.response?.data?.error || 'Failed to cancel booking')
+    }
   }
 
   if (loading) {
@@ -159,11 +214,9 @@ export default function ProviderBookings({ user }) {
                       <div>Customer: {booking.user?.full_name}</div>
                       <div>Date: {formatDate(booking.scheduled_date || booking.created_at)}</div>
                       <div>Address: {booking.service_address}</div>
-                      {booking.final_price && (
-                        <div className="font-semibold text-green-600">
-                          Amount: {formatCurrency(booking.final_price)}
-                        </div>
-                      )}
+                      <div className="font-semibold text-green-600">
+                        Amount: {formatCurrency(booking.final_price || booking.base_charge || 0)}
+                      </div>
                     </div>
                   </div>
 
@@ -271,12 +324,23 @@ export default function ProviderBookings({ user }) {
                     )}
 
                     {booking.status === 'in_progress' && (
-                      <button
-                        onClick={() => completeBooking(booking.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex-1 md:flex-none"
-                      >
-                        Complete
-                      </button>
+                      <>
+                        <button
+                          onClick={() => completeBooking(booking.id)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex-1 md:flex-none"
+                        >
+                          Complete
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(booking)
+                            setShowCancelModal(true)
+                          }}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex-1 md:flex-none"
+                        >
+                          Cancel
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -285,6 +349,51 @@ export default function ProviderBookings({ user }) {
           </div>
         )}
       </div>
+
+      {/* Cancellation Modal */}
+      {showCancelModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-2 text-red-600">Cancel Booking</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to cancel this booking? It will be released back to the pool for other providers.
+            </p>
+
+            <form onSubmit={handleCancelBooking}>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Cancellation *</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  rows={3}
+                  placeholder="e.g. Too far, Emergency, etc."
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelModal(false)
+                    setCancelReason('')
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Keep Booking
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                >
+                  Confirm Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
