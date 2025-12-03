@@ -121,9 +121,15 @@ export default function BookingDetails({ user }) {
       // Handle ratings
       if (data?.ratings) {
         // ratings is an array now
+        console.log('📊 Raw ratings data:', data.ratings)
         const ratings = Array.isArray(data.ratings) ? data.ratings : [data.ratings]
-        const uRating = ratings.find(r => r.rated_by === 'user' || !r.rated_by) // Handle legacy ratings as user
+        console.log('📊 Processed ratings array:', ratings)
+
+        const uRating = ratings.find(r => r.rated_by === 'user' || !r.rated_by)
         const pRating = ratings.find(r => r.rated_by === 'provider')
+
+        console.log('👤 User rating found:', uRating)
+        console.log('👷 Provider rating found:', pRating)
 
         setUserRating(uRating)
         setProviderRating(pRating)
@@ -228,6 +234,13 @@ export default function BookingDetails({ user }) {
       return
     }
 
+    const ratedBy = booking.provider?.user_id === user.id ? 'provider' : 'user'
+    console.log('📝 Submitting rating:', {
+      bookingProviderId: booking.provider?.user_id,
+      currentUserId: user.id,
+      determinedRatedBy: ratedBy
+    })
+
     try {
       await axios.post('/api/ratings/create', {
         booking_id: id,
@@ -238,9 +251,9 @@ export default function BookingDetails({ user }) {
         behavior_rating: criteriaRatings.behavior,
         nature_rating: criteriaRatings.nature,
         work_knowledge_rating: criteriaRatings.work_knowledge,
-        work_quality: criteriaRatings.work_quality,
-        punctuality: criteriaRatings.punctuality,
-        rated_by: booking.provider?.user_id === user.id ? 'provider' : 'user'
+        work_quality_rating: criteriaRatings.work_quality,
+        punctuality_rating: criteriaRatings.punctuality,
+        rated_by: ratedBy
       })
 
       toast.success('Rating submitted successfully')

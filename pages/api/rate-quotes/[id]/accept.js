@@ -57,14 +57,53 @@ export default async function handler(req, res) {
     const serviceLng = details.service_lng || address?.longitude
     const scheduledDate = details.scheduled_date ? new Date(details.scheduled_date) : null
 
+    // Fetch selected sub-services
+    let selectedSubServices = []
+    let selectedAddons = []
+    const sub_service_ids = details.sub_service_ids
+    const sub_subservice_ids = details.sub_subservice_ids
+
+    if (sub_service_ids && Array.isArray(sub_service_ids) && sub_service_ids.length > 0) {
+      const { data: subServices } = await supabaseAdmin
+        .from('service_subservices')
+        .select('*')
+        .in('id', sub_service_ids)
+        .eq('service_id', rateQuote.service_id)
+
+      if (subServices) selectedSubServices = subServices
+    }
+
+    // Fetch selected addons
+    if (sub_subservice_ids && Array.isArray(sub_subservice_ids) && sub_subservice_ids.length > 0) {
+      const { data: addons } = await supabaseAdmin
+        .from('service_sub_subservices')
+        .select('*')
+        .in('id', sub_subservice_ids)
+
+      if (addons) selectedAddons = addons
+    }
+
+    // Construct a summary name for the booking
+    let bookingSubServiceName = selectedSubServices.length > 0
+      ? selectedSubServices.map(s => s.name).join(', ')
+      : details.sub_service_names || null
+
+    // Append addon names if any
+    if (selectedAddons.length > 0) {
+      const addonNames = selectedAddons.map(a => a.name).join(', ')
+      bookingSubServiceName = bookingSubServiceName
+        ? `${bookingSubServiceName} + ${addonNames}`
+        : addonNames
+    }
+
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .insert({
         user_id: user.id,
         provider_id: providerQuote.provider_id,
         service_id: rateQuote.service_id,
-        sub_service_id: rateQuote.sub_service_id,
-        sub_service_name: details.sub_service_name || null,
+        sub_service_id: selectedSubServices.length > 0 ? selectedSubServices[0].id : rateQuote.sub_service_id,
+        sub_service_name: bookingSubServiceName,
         base_charge: details.base_charge || providerQuote.quoted_price,
         hourly_charge: details.hourly_charge || null,
         city_id: rateQuote.city_id,
@@ -83,6 +122,39 @@ export default async function handler(req, res) {
       .single()
 
     if (bookingError) throw bookingError
+
+    // Insert Booking Items
+    const bookingItems = []
+
+    if (selectedSubServices.length > 0) {
+      selectedSubServices.forEach(sub => {
+        bookingItems.push({
+          booking_id: booking.id,
+          sub_service_id: sub.id,
+          sub_service_name: sub.name,
+          price: sub.base_charge || 0,
+          quantity: 1
+        })
+      })
+    }
+
+    if (selectedAddons.length > 0) {
+      selectedAddons.forEach(addon => {
+        bookingItems.push({
+          booking_id: booking.id,
+          sub_service_id: addon.id,
+          sub_service_name: addon.name,
+          price: addon.base_charge || 0,
+          quantity: 1
+        })
+      })
+    }
+
+    if (bookingItems.length > 0) {
+      await supabaseAdmin
+        .from('booking_items')
+        .insert(bookingItems)
+    }
 
     await supabaseAdmin
       .from('provider_quotes')

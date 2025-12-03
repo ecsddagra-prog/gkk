@@ -208,6 +208,7 @@ export default async function handler(req, res) {
       service_lng: service_lng ? parseFloat(service_lng) : null,
       scheduled_date: scheduled_date ? new Date(scheduled_date) : null,
       status: user_quoted_price ? 'quote_requested' : 'pending',
+      quote_status: user_quoted_price ? 'user_quoted' : 'none',
       user_quoted_price: user_quoted_price ? parseFloat(user_quoted_price) : null,
       // Store primary sub-service ID if any, or null. 
       // Ideally bookings table should rely on booking_items, but for backward compat we keep this.
