@@ -75,7 +75,7 @@ export default async function handler(req, res) {
                 quoted_by: 'provider',
                 quoted_price: booking.user_quoted_price,
                 message: 'Provider accepted user quote',
-                status: 'accepted'
+                status: 'confirmed'
             })
 
         // Notify user

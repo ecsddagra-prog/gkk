@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     // Get booking
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .select('*, provider:providers(*)')
+      .select('*, provider:providers!bookings_provider_id_fkey(*)')
       .eq('id', booking_id)
       .single()
 
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
         reference_id: booking_id
       })
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: 'Booking completed successfully',
       booking_id
     })

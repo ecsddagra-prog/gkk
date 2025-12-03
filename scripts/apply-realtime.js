@@ -17,13 +17,13 @@ async function applyMigration() {
         await client.connect();
         console.log('✅ Connected to database');
 
-        const migrationPath = path.join(__dirname, '../supabase/migrations/20251203_fix_booking_rls.sql');
+        const migrationPath = path.join(__dirname, '../supabase/migrations/20251203_enable_realtime_bookings.sql');
         const sql = fs.readFileSync(migrationPath, 'utf8');
 
-        console.log('📝 Applying migration...');
+        console.log('📝 Applying realtime migration...');
         await client.query(sql);
 
-        console.log('✅ Migration applied successfully!');
+        console.log('✅ Realtime enabled for bookings successfully!');
     } catch (err) {
         console.error('❌ Error applying migration:', err);
         process.exit(1);

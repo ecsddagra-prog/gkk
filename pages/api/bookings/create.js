@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       // Get providers offering this service
       const { data: providerServices } = await supabaseAdmin
         .from('provider_services')
-        .select('provider_id, provider:providers(*)')
+        .select('provider_id, provider:providers!bookings_provider_id_fkey(*)')
         .eq('service_id', service_id)
         .eq('is_active', true)
 

@@ -21,9 +21,27 @@ export default function Bookings({ user }) {
 
   const loadBookings = async () => {
     try {
+      console.log('🔍 Loading bookings for user:', user)
+      console.log('📊 User ID:', user?.id)
+      console.log('📧 User email:', user?.email)
+
+      // Check current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log('🔐 Current session:', session)
+      console.log('🆔 Session user ID:', session?.user?.id)
+
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError)
+      }
+
+      if (!session) {
+        console.error('❌ No active session found!')
+        return
+      }
+
       let query = supabase
         .from('bookings')
-        .select('*, service:services(*), provider:providers(*, user:users(*))')
+        .select('*, service:services(*), provider:providers!bookings_provider_id_fkey(*, user:users(*))')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -31,7 +49,17 @@ export default function Bookings({ user }) {
         query = query.eq('status', filter)
       }
 
-      const { data } = await query
+      console.log('📡 Executing query with filter:', filter)
+      const { data, error } = await query
+
+      if (error) {
+        console.error('❌ Query error:', error)
+        console.error('Error details:', JSON.stringify(error, null, 2))
+      }
+
+      console.log('✅ Query result:', data)
+      console.log('📊 Bookings count:', data?.length || 0)
+
       setBookings(data || [])
     } catch (error) {
       console.error('Error loading bookings:', error)
@@ -66,15 +94,14 @@ export default function Bookings({ user }) {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex gap-2">
-            {['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'].map(status => (
+            {['all', 'pending', 'confirmed', 'in_progress', 'completed'].map(status => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg capitalize ${
-                  filter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg capitalize ${filter === status
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {status === 'all' ? 'All' : getStatusLabel(status)}
               </button>

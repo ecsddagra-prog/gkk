@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         // Get booking
         const { data: booking, error: bookingError } = await supabaseAdmin
             .from('bookings')
-            .select('*, service:services(*), provider:providers(*, user:users(*))')
+            .select('*, service:services(*), provider:providers!bookings_provider_id_fkey(*, user:users(*))')
             .eq('id', booking_id)
             .eq('user_id', user.id)
             .single()
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
                 .update({
                     final_agreed_price: booking.provider_counter_price,
                     quote_status: 'accepted',
-                    status: 'accepted'
+                    status: 'confirmed'
                 })
                 .eq('id', booking_id)
 
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
             // Update quote negotiation history
             await supabaseAdmin
                 .from('quote_negotiations')
-                .update({ status: 'accepted' })
+                .update({ status: 'confirmed' })
                 .eq('booking_id', booking_id)
                 .eq('quoted_by', 'provider')
                 .eq('status', 'pending')

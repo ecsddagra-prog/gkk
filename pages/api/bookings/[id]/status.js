@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         // First, get the booking to check permissions
         const { data: existingBooking, error: fetchError } = await supabaseAdmin
             .from('bookings')
-            .select('*, provider:providers(user_id)')
+            .select('*, provider:providers!bookings_provider_id_fkey(user_id)')
             .eq('id', id)
             .single()
 
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
             let message = `Your booking status has been updated to ${status}`
 
             switch (status) {
-                case 'accepted':
+                case 'confirmed':
                     message = 'Your booking has been accepted by the provider!'
                     break
                 case 'on_way':

@@ -45,7 +45,7 @@ export default function ProviderBookings({ user }) {
       // Get bookings assigned to this provider
       let query = supabase
         .from('bookings')
-        .select('*, service:services(*), user:users(*)')
+        .select('*, service:services(*), user:users!bookings_user_id_fkey(*)')
         .eq('provider_id', providerData.id)
         .order('created_at', { ascending: false })
 
@@ -177,7 +177,7 @@ export default function ProviderBookings({ user }) {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6 overflow-x-auto">
           <div className="flex gap-2 min-w-max">
-            {['all', 'pending', 'quote_requested', 'accepted', 'on_way', 'in_progress', 'completed'].map(status => (
+            {['all', 'pending', 'quote_requested', 'confirmed', 'on_way', 'in_progress', 'completed'].map(status => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -231,7 +231,7 @@ export default function ProviderBookings({ user }) {
                     {/* Action Buttons based on Status */}
                     {booking.status === 'pending' && (
                       <button
-                        onClick={() => updateStatus(booking.id, 'accepted')}
+                        onClick={() => updateStatus(booking.id, 'confirmed')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex-1 md:flex-none"
                       >
                         Accept
@@ -305,7 +305,7 @@ export default function ProviderBookings({ user }) {
                       </>
                     )}
 
-                    {booking.status === 'accepted' && (
+                    {booking.status === 'confirmed' && (
                       <button
                         onClick={() => updateStatus(booking.id, 'on_way')}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex-1 md:flex-none"

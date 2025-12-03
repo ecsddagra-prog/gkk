@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     // Check if booking exists and belongs to user/provider
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .select('*, provider:providers(*)')
+      .select('*, provider:providers!bookings_provider_id_fkey(*)')
       .eq('id', booking_id)
       .single()
 
