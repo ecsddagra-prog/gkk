@@ -62,16 +62,23 @@ export default function RateQuoteDetails({ user }) {
   useEffect(() => {
     if (!rateQuote?.expires_at) return
 
-    const timer = setInterval(() => {
+    const updateTimer = () => {
       const diff = new Date(rateQuote.expires_at).getTime() - Date.now()
       if (diff <= 0) {
         setCountdown('00:00')
-        clearInterval(timer)
-        return
+        return false
       }
       const minutes = Math.floor(diff / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
       setCountdown(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`)
+      return true
+    }
+
+    // Run immediately
+    if (!updateTimer()) return
+
+    const timer = setInterval(() => {
+      if (!updateTimer()) clearInterval(timer)
     }, 1000)
 
     return () => clearInterval(timer)
@@ -196,10 +203,10 @@ export default function RateQuoteDetails({ user }) {
                   )}
                 </div>
                 <div className={`px-3 py-1 rounded-full text-sm ${rateQuote.status === 'converted'
-                    ? 'bg-green-100 text-green-700'
-                    : rateQuote.status === 'cancelled' || rateQuote.status === 'expired'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-yellow-100 text-yellow-700'
+                  ? 'bg-green-100 text-green-700'
+                  : rateQuote.status === 'cancelled' || rateQuote.status === 'expired'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-yellow-100 text-yellow-700'
                   }`}>
                   {rateQuote.status}
                 </div>
@@ -219,6 +226,12 @@ export default function RateQuoteDetails({ user }) {
               </div>
 
               <div className="space-y-2 text-sm text-gray-700">
+                {rateQuote.details?.sub_service_names && (
+                  <div className="bg-blue-50 p-3 rounded-md border border-blue-100 mb-3">
+                    <span className="font-semibold block text-blue-800 mb-1">Requested Services:</span>
+                    <span className="text-blue-900">{rateQuote.details.sub_service_names}</span>
+                  </div>
+                )}
                 <div><span className="font-semibold">Address:</span> {rateQuote.details?.service_address}</div>
                 {rateQuote.details?.scheduled_date && (
                   <div><span className="font-semibold">Schedule:</span> {formatDateTime(rateQuote.details.scheduled_date)}</div>
@@ -264,10 +277,10 @@ export default function RateQuoteDetails({ user }) {
                         </div>
                         <div className="text-right space-y-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${quote.status === 'accepted'
-                              ? 'bg-green-100 text-green-700'
-                              : quote.status === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                            ? 'bg-green-100 text-green-700'
+                            : quote.status === 'rejected'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-yellow-100 text-yellow-700'
                             }`}>
                             {quote.status}
                           </span>

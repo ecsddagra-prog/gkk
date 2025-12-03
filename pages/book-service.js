@@ -37,6 +37,7 @@ export default function BookService({ user }) {
   const [submitting, setSubmitting] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [providerCount, setProviderCount] = useState({ count: 0, enabled: false })
+  const [showQuoteField, setShowQuoteField] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -163,6 +164,9 @@ export default function BookService({ user }) {
     setFormData(prev => ({
       ...prev,
       service_address: `${address.address_line1}${address.address_line2 ? `, ${address.address_line2}` : ''}, ${address.city}, ${address.pincode || ''}`,
+      city: address.city || '',
+      state: address.state || '',
+      pincode: address.pincode || '',
       service_lat: address.latitude,
       service_lng: address.longitude
     }))
@@ -400,7 +404,7 @@ export default function BookService({ user }) {
 
       const payload = {
         service_id: selectedServiceId,
-        sub_service_id: selectedSubServiceId,
+        sub_service_id: selectedSubServiceIds.length > 0 ? selectedSubServiceIds[0] : null,
         city_id: selectedCity,
         address_id: selectedAddress,
         requested_price: formData.user_quoted_price || null,
@@ -414,6 +418,8 @@ export default function BookService({ user }) {
           for_whom: bookingFor,
           other_contact: bookingFor === 'other' ? otherContact : null,
           sub_service_names: activeSubServices.map(s => s.name).join(', ') || activeService?.name,
+          sub_service_ids: selectedSubServiceIds,
+          sub_subservice_ids: selectedSubSubServiceIds,
           base_charge: chargeSummary.base,
           hourly_charge: chargeSummary.hourly
         }
@@ -827,38 +833,78 @@ export default function BookService({ user }) {
             <p className="text-xs text-gray-500 mt-1">Leave empty to book as soon as possible</p>
           </div>
 
-          {/* User Quoted Price (Optional) */}
+          {/* Quote Your Own Rate Toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Your Preferred Price (Optional)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.user_quoted_price}
-              onChange={(e) => setFormData({ ...formData, user_quoted_price: e.target.value })}
-              placeholder="Enter your preferred price"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-            <p className="text-xs text-gray-500 mt-1">Provider can accept or counter your offer</p>
+            {!showQuoteField ? (
+              <button
+                type="button"
+                onClick={() => setShowQuoteField(true)}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Quote Your Own Rate
+              </button>
+            ) : (
+              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Your Preferred Price</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowQuoteField(false)
+                      setFormData({ ...formData, user_quoted_price: '' })
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.user_quoted_price}
+                  onChange={(e) => setFormData({ ...formData, user_quoted_price: e.target.value })}
+                  placeholder="Enter your preferred price"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                <p className="text-xs text-gray-600 mt-2">Provider can accept or counter your offer</p>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              type="button"
-              disabled={quoteLoading}
-              onClick={handleRateQuote}
-              className="w-full px-4 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50"
-            >
-              {quoteLoading ? 'Requesting...' : 'Request Rate Quote'}
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {submitting ? 'Creating Booking...' : 'Create Booking'}
-            </button>
+          {/* Primary Action */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full px-6 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 shadow-lg transition-all"
+          >
+            {submitting ? 'Creating Booking...' : 'Create Booking Now'}
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 border-t border-gray-300"></div>
+            <span className="text-sm text-gray-500 font-medium">OR</span>
+            <div className="flex-1 border-t border-gray-300"></div>
           </div>
+
+          {/* Secondary Action */}
+          <button
+            type="button"
+            disabled={quoteLoading}
+            onClick={handleRateQuote}
+            className="w-full px-6 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+          >
+            {quoteLoading ? 'Requesting...' : 'Request Rate Quote'}
+          </button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Get competitive quotes from multiple providers
+          </p>
         </form>
       </div >
     </div >

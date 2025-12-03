@@ -52,10 +52,24 @@ export default async function handler(req, res) {
     }
 
     const isOwner = rateQuote.user_id === user.id
-    const providerQuote = rateQuote.provider_quotes?.find(q => q.provider_id === providerId)
+    const hasQuoted = rateQuote.provider_quotes?.find(q => q.provider_id === providerId)
 
-    if (!isOwner && !providerQuote) {
-      return res.status(403).json({ error: 'Forbidden' })
+    // Check if provider offers this service
+    let offersService = false
+    if (providerId && rateQuote.service_id) {
+      const { data: providerService } = await supabaseAdmin
+        .from('provider_services')
+        .select('id')
+        .eq('provider_id', providerId)
+        .eq('service_id', rateQuote.service_id)
+        .eq('is_active', true)
+        .single()
+
+      offersService = !!providerService
+    }
+
+    if (!isOwner && !hasQuoted && !offersService) {
+      return res.status(403).json({ error: 'Forbidden - You do not offer this service' })
     }
 
     return res.status(200).json({ rate_quote: rateQuote })

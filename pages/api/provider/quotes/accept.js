@@ -39,19 +39,31 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing booking_id' })
         }
 
-        // Get booking
+        // Get booking - allow if assigned to provider OR unassigned
         const { data: booking, error: bookingError } = await supabaseAdmin
             .from('bookings')
             .select('*, service:services(*), user:users(*)')
             .eq('id', booking_id)
-            .eq('provider_id', provider.id)
+            .or(`provider_id.eq.${provider.id},provider_id.is.null`)
             .single()
 
         if (bookingError || !booking) {
-            return res.status(404).json({ error: 'Booking not found or not assigned to you' })
+            return res.status(404).json({ error: 'Booking not found or not available' })
         }
 
-        if (booking.quote_status !== 'user_quoted') {
+        // If booking is unassigned, assign to this provider
+        if (!booking.provider_id) {
+            const { error: assignError } = await supabaseAdmin
+                .from('bookings')
+                .update({ provider_id: provider.id })
+                .eq('id', booking_id)
+
+            if (assignError) {
+                return res.status(500).json({ error: 'Failed to assign booking to provider' })
+            }
+        }
+
+        if (booking.status !== 'quote_requested' && booking.quote_status !== 'user_quoted') {
             return res.status(400).json({ error: 'This booking does not have a pending user quote' })
         }
 
@@ -59,9 +71,10 @@ export default async function handler(req, res) {
         const { error: updateError } = await supabaseAdmin
             .from('bookings')
             .update({
-                final_agreed_price: booking.user_quoted_price,
+                final_price: booking.user_quoted_price,
                 quote_status: 'accepted',
-                status: 'confirmed'
+                status: 'confirmed',
+                provider_id: provider.id
             })
             .eq('id', booking_id)
 
