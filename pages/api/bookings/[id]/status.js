@@ -86,14 +86,14 @@ export default async function handler(req, res) {
 
         if (updateError) throw updateError
 
-        // 2. Record history (optional - won't fail if table doesn't exist)
+        // 2. Record history
         try {
             await supabaseAdmin
                 .from('booking_status_history')
                 .insert({
                     booking_id: id,
                     status,
-                    changed_by: changed_by || null
+                    changed_by: user.id
                 })
         } catch (historyError) {
             console.warn('Could not record status history:', historyError.message)

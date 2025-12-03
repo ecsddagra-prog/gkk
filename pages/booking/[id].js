@@ -103,7 +103,7 @@ export default function BookingDetails({ user }) {
 
   const loadBooking = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
         .select(`
           *,
@@ -116,7 +116,20 @@ export default function BookingDetails({ user }) {
         .eq('id', id)
         .single()
 
-      setBooking(data)
+      if (error) throw error
+
+      // Fetch history separately to avoid blocking main booking load
+      const { data: history, error: historyError } = await supabase
+        .from('booking_status_history')
+        .select('*')
+        .eq('booking_id', id)
+        .order('created_at', { ascending: true })
+
+      if (historyError) {
+        console.error('Error loading history:', historyError)
+      }
+
+      setBooking({ ...data, history: history || [] })
 
       // Handle ratings
       if (data?.ratings) {
@@ -428,7 +441,7 @@ export default function BookingDetails({ user }) {
                   const isActive = stepIdx <= currentIdx
 
                   return (
-                    <div key={step} className="flex flex-col items-center flex-1 relative">
+                    <div key={step} className="flex flex-col items-center flex-1 relative group">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 z-10 ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
                         }`}>
                         {isActive ? '✓' : index + 1}
@@ -436,6 +449,19 @@ export default function BookingDetails({ user }) {
                       <span className={`capitalize ${isActive ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
                         {getStatusLabel(step)}
                       </span>
+
+                      {/* Timestamp Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:block w-max max-w-[200px] p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-20 text-center">
+                        {(() => {
+                          const historyEntry = booking.history?.find(h => h.status === step)
+                          if (historyEntry) {
+                            return `${getStatusLabel(step)} on ${formatDateTime(historyEntry.created_at)}`
+                          }
+                          return isActive ? 'Completed' : 'Not yet reached'
+                        })()}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                      </div>
+
                       {index < steps.length - 1 && (
                         <div className={`absolute top-4 left-1/2 w-full h-0.5 -z-0 ${stepIdx < currentIdx ? 'bg-blue-600' : 'bg-gray-200'
                           }`} />
