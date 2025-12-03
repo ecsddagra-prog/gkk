@@ -18,6 +18,24 @@ export default function Dashboard({ user }) {
       return
     }
     loadData()
+
+    // Real-time subscription
+    const subscription = supabase
+      .channel('dashboard-bookings')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('🔔 Dashboard booking update:', payload)
+        loadData()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(subscription)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -72,7 +90,7 @@ export default function Dashboard({ user }) {
       // Load bookings
       const { data: bookingsData } = await supabase
         .from('bookings')
-        .select('*, service:services(*), provider:providers(*, user:users(*))')
+        .select('*, service:services(*), provider:providers!bookings_provider_id_fkey(*, user:users(*))')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10)

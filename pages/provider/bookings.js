@@ -27,34 +27,72 @@ export default function ProviderBookings({ user }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter])
 
+  useEffect(() => {
+    if (!provider) return
+
+    console.log('🔌 Subscribing to provider bookings:', provider.id)
+
+    // Subscribe to assigned bookings
+    const assignedSubscription = supabase
+      .channel(`provider-bookings-${provider.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+        filter: `provider_id=eq.${provider.id}`
+      }, (payload) => {
+        console.log('🔔 Provider assigned booking update:', payload)
+        loadData()
+      })
+      .subscribe()
+
+    // Subscribe to unassigned bookings (Job Board)
+    const unassignedSubscription = supabase
+      .channel(`provider-bookings-unassigned`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+        filter: 'provider_id=is.null'
+      }, (payload) => {
+        console.log('🔔 Provider unassigned booking update:', payload)
+        loadData()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(assignedSubscription)
+      supabase.removeChannel(unassignedSubscription)
+    }
+  }, [provider])
+
   const loadData = async () => {
     try {
-      const { data: providerData } = await supabase
-        .from('providers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      const { data: { session } } = await supabase.auth.getSession()
 
-      if (!providerData) {
-        router.push('/provider/register')
-        return
+      // Get provider details first (needed for subscription setup if not already set)
+      if (!provider) {
+        const { data: providerData } = await supabase
+          .from('providers')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (providerData) {
+          setProvider(providerData)
+        } else {
+          router.push('/provider/register')
+          return
+        }
       }
 
-      setProvider(providerData)
+      // Fetch bookings via API to bypass RLS for unassigned jobs
+      const response = await axios.get('/api/provider/bookings/list', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        params: { status: filter }
+      })
 
-      // Get bookings assigned to this provider
-      let query = supabase
-        .from('bookings')
-        .select('*, service:services(*), user:users!bookings_user_id_fkey(*)')
-        .eq('provider_id', providerData.id)
-        .order('created_at', { ascending: false })
-
-      if (filter !== 'all') {
-        query = query.eq('status', filter)
-      }
-
-      const { data: bookingsData } = await query
-      setBookings(bookingsData || [])
+      setBookings(response.data.bookings || [])
     } catch (error) {
       console.error('Error loading data:', error)
       toast.error('Failed to load bookings')
@@ -78,13 +116,28 @@ export default function ProviderBookings({ user }) {
     }
   }
 
-  const updateStatus = async (bookingId, newStatus) => {
+  // Completion Modal State
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [completionData, setCompletionData] = useState({
+    amount: '',
+    paymentMethod: 'cash'
+  })
+
+  const updateStatus = async (bookingId, newStatus, finalPrice = null, paymentMethod = null) => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      await axios.patch(`/api/bookings/${bookingId}/status`, {
+      const payload = {
         status: newStatus,
         changed_by: user.id
-      }, {
+      }
+      if (finalPrice) {
+        payload.final_price = finalPrice
+      }
+      if (paymentMethod) {
+        payload.payment_method = paymentMethod
+      }
+
+      await axios.patch(`/api/bookings/${bookingId}/status`, payload, {
         headers: { Authorization: `Bearer ${session?.access_token}` }
       })
       toast.success(`Booking marked as ${getStatusLabel(newStatus)}`)
@@ -95,13 +148,30 @@ export default function ProviderBookings({ user }) {
     }
   }
 
-  const completeBooking = async (bookingId) => {
-    // We can use the status update API for completion too, or keep the specific complete API if it does more (like payments)
-    // Checking existing complete.js... it likely handles payment logic if any. 
-    // For now, let's use the status update for consistency with the new flow, 
-    // unless there's specific logic in complete.js we need.
-    // Actually, let's use the new status API for all status changes to ensure history is tracked.
-    updateStatus(bookingId, 'completed')
+  const initiateCompletion = (booking) => {
+    setSelectedBooking(booking)
+    setCompletionData({
+      amount: booking.final_price || booking.user_quoted_price || booking.base_charge || '',
+      paymentMethod: 'cash'
+    })
+    setShowCompleteModal(true)
+  }
+
+  const handleCompleteSubmit = async (e) => {
+    e.preventDefault()
+    if (!completionData.amount || isNaN(completionData.amount) || parseFloat(completionData.amount) <= 0) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+
+    await updateStatus(
+      selectedBooking.id,
+      'completed',
+      parseFloat(completionData.amount),
+      completionData.paymentMethod
+    )
+    setShowCompleteModal(false)
+    setSelectedBooking(null)
   }
 
   const handlePaymentConfirm = async () => {
@@ -326,7 +396,7 @@ export default function ProviderBookings({ user }) {
                     {booking.status === 'in_progress' && (
                       <>
                         <button
-                          onClick={() => completeBooking(booking.id)}
+                          onClick={() => initiateCompletion(booking)}
                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex-1 md:flex-none"
                         >
                           Complete
@@ -349,6 +419,70 @@ export default function ProviderBookings({ user }) {
           </div>
         )}
       </div>
+
+      {/* Completion Modal */}
+      {showCompleteModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4 text-green-600">Complete Job</h2>
+            <form onSubmit={handleCompleteSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Final Amount to Collect</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    value={completionData.amount}
+                    onChange={(e) => setCompletionData({ ...completionData, amount: e.target.value })}
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="0.00"
+                    required
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['cash', 'online', 'upi'].map(method => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setCompletionData({ ...completionData, paymentMethod: method })}
+                      className={`px-3 py-2 rounded-lg border text-sm capitalize ${completionData.paymentMethod === method
+                        ? 'bg-green-50 border-green-500 text-green-700 font-medium'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCompleteModal(false)
+                    setSelectedBooking(null)
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                >
+                  Complete & Collect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Cancellation Modal */}
       {showCancelModal && selectedBooking && (

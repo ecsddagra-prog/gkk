@@ -16,6 +16,24 @@ export default function Bookings({ user }) {
       return
     }
     loadBookings()
+
+    // Real-time subscription
+    const subscription = supabase
+      .channel('public:bookings')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('🔔 Booking update received:', payload)
+        loadBookings()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(subscription)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter])
 
