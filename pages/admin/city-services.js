@@ -9,7 +9,9 @@ export default function AdminCityServices({ user }) {
   const router = useRouter()
   const [cities, setCities] = useState([])
   const [services, setServices] = useState([])
+  const [categories, setCategories] = useState([])
   const [selectedCity, setSelectedCity] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [cityServices, setCityServices] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -59,6 +61,14 @@ export default function AdminCityServices({ user }) {
       if (citiesData && citiesData.length > 0) {
         setSelectedCity(citiesData[0].id)
       }
+
+      // Load service categories
+      const { data: categoriesData } = await supabase
+        .from('service_categories')
+        .select('*')
+        .order('name')
+
+      setCategories(categoriesData || [])
 
       // Load services
       const { data: servicesData } = await supabase
@@ -133,19 +143,36 @@ export default function AdminCityServices({ user }) {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* City Selector */}
+        {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select City</label>
-          <select
-            value={selectedCity || ''}
-            onChange={(e) => setSelectedCity(e.target.value)}
-            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">Select a city</option>
-            {cities.map(city => (
-              <option key={city.id} value={city.id}>{city.name}</option>
-            ))}
-          </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select City</label>
+              <select
+                value={selectedCity || ''}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Select a city</option>
+                {cities.map(city => (
+                  <option key={city.id} value={city.id}>{city.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Service Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {selectedCity ? (
@@ -155,32 +182,33 @@ export default function AdminCityServices({ user }) {
                 Services for {cities.find(c => c.id === selectedCity)?.name}
               </h2>
               <div className="space-y-2">
-                {services.map(service => {
-                  const cityService = cityServices.find(cs => cs.service_id === service.id)
-                  const isEnabled = cityService?.is_enabled || false
+                {services
+                  .filter(service => !selectedCategory || service.category_id === selectedCategory)
+                  .map(service => {
+                    const cityService = cityServices.find(cs => cs.service_id === service.id)
+                    const isEnabled = cityService?.is_enabled || false
 
-                  return (
-                    <div
-                      key={service.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex-1">
-                        <div className="font-semibold">{service.name}</div>
-                        <div className="text-sm text-gray-600">{service.category?.name}</div>
-                      </div>
-                      <button
-                        onClick={() => toggleService(service.id, isEnabled)}
-                        className={`px-4 py-2 rounded-lg ${
-                          isEnabled
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                        }`}
+                    return (
+                      <div
+                        key={service.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                       >
-                        {isEnabled ? 'Enabled' : 'Disabled'}
-                      </button>
-                    </div>
-                  )
-                })}
+                        <div className="flex-1">
+                          <div className="font-semibold">{service.name}</div>
+                          <div className="text-sm text-gray-600">{service.category?.name}</div>
+                        </div>
+                        <button
+                          onClick={() => toggleService(service.id, isEnabled)}
+                          className={`px-4 py-2 rounded-lg ${isEnabled
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                            }`}
+                        >
+                          {isEnabled ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+                    )
+                  })}
               </div>
             </div>
           </div>
