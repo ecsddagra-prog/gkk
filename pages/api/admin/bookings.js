@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
         let query = supabaseAdmin
             .from('bookings')
-            .select('*, service:services(*), user:users(*), provider:providers(*, user:users(*))')
+            .select('*, service:services(*), user:users(*), provider:providers!bookings_provider_id_fkey(*, user:users(*))')
             .order('created_at', { ascending: false })
             .limit(100)
 

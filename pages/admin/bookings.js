@@ -41,7 +41,7 @@ export default function AdminBookings({ user }) {
     try {
       let query = supabase
         .from('bookings')
-        .select('*, service:services(*), user:users(*), provider:providers(*, user:users(*))')
+        .select('*, service:services(*), user:users(*), provider:providers!bookings_provider_id_fkey(*, user:users(*))')
         .order('created_at', { ascending: false })
         .limit(100)
 
@@ -85,15 +85,14 @@ export default function AdminBookings({ user }) {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex gap-2">
-            {['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'].map(status => (
+            {['all', 'pending', 'confirmed', 'in_progress', 'completed'].map(status => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg capitalize ${
-                  filter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg capitalize ${filter === status
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {status === 'all' ? 'All' : getStatusLabel(status)}
               </button>

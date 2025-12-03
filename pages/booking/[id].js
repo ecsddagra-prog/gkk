@@ -108,7 +108,7 @@ export default function BookingDetails({ user }) {
         .select(`
           *,
           service:services(*, category:service_categories(*)),
-          provider:providers(*, user:users(*)),
+          provider:providers!bookings_provider_id_fkey(*, user:users(*)),
           address:user_addresses(*),
           quotes:booking_quotes(*),
           ratings(*)
@@ -408,8 +408,8 @@ export default function BookingDetails({ user }) {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold mb-4">Booking Status</h2>
               <div className="flex items-center justify-between text-sm">
-                {['pending', 'accepted', 'in_progress', 'completed'].map((step, index) => {
-                  const steps = ['pending', 'accepted', 'in_progress', 'completed']
+                {['pending', 'confirmed', 'in_progress', 'completed'].map((step, index) => {
+                  const steps = ['pending', 'confirmed', 'in_progress', 'completed']
                   const currentIdx = steps.indexOf(booking.status)
                   const stepIdx = steps.indexOf(step)
                   const isActive = stepIdx <= currentIdx
