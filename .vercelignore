@@ -1,0 +1,36 @@
+# Test files
+test-*.js
+verify-schema.js
+*.test.js
+*.spec.js
+
+# Documentation
+*.md
+!README.md
+
+# Logs and debug files
+*.log
+*.txt
+debug_output.*
+diagnostic_output.*
+tsc_log.*
+build_log.*
+
+# Development files
+.roo/
+.env.local
+.env*.local
+
+# Editor
+.vscode/
+.idea/
+
+# Recordings
+*.webm
+*.mp4
+
+# Database dumps
+*.sql
+
+# HTML test files
+*.html
