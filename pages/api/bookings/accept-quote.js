@@ -68,6 +68,19 @@ export default async function handler(req, res) {
       })
       .eq('id', booking_id)
 
+    // Record status history
+    try {
+      await supabaseAdmin
+        .from('booking_status_history')
+        .insert({
+          booking_id: booking_id,
+          status: 'confirmed',
+          changed_by: accepted_by === 'user' ? booking.user_id : booking.provider_id // simplified, ideally user_id
+        })
+    } catch (e) {
+      console.warn('Failed to record history:', e)
+    }
+
     // Notify both parties
     const { data: provider } = await supabaseAdmin
       .from('providers')
@@ -99,7 +112,7 @@ export default async function handler(req, res) {
         })
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: 'Quote accepted successfully',
       booking_id,
       final_price: finalPrice

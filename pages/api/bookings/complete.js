@@ -44,6 +44,19 @@ export default async function handler(req, res) {
       })
       .eq('id', booking_id)
 
+    // Record status history
+    try {
+      await supabaseAdmin
+        .from('booking_status_history')
+        .insert({
+          booking_id: booking_id,
+          status: 'completed',
+          changed_by: completed_by
+        })
+    } catch (e) {
+      console.warn('Failed to record history:', e)
+    }
+
     // Update provider stats
     if (isProvider && booking.provider_id) {
       await supabaseAdmin

@@ -310,6 +310,15 @@ export default async function handler(req, res) {
       }
     }
 
+    // Insert initial status history
+    await supabaseAdmin
+      .from('booking_status_history')
+      .insert({
+        booking_id: booking.id,
+        status: booking.status,
+        changed_by: user_id // The user who created the booking
+      })
+
     return res.status(201).json({ booking })
   } catch (error) {
     console.error('Create booking error:', error)
