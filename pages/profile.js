@@ -52,7 +52,6 @@ export default function Profile({ user }) {
         .from('users')
         .update({
           full_name: formData.full_name,
-          email: formData.email,
           phone: formData.phone
         })
         .eq('id', user.id)
@@ -62,7 +61,11 @@ export default function Profile({ user }) {
       toast.success('Profile updated successfully')
       loadProfile()
     } catch (error) {
-      toast.error('Failed to update profile')
+      if (error.message?.includes('users_phone_key') || error.code === '23505') {
+        toast.error('This phone number is already registered with another account')
+      } else {
+        toast.error('Failed to update profile')
+      }
     }
   }
 
@@ -107,9 +110,8 @@ export default function Profile({ user }) {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                required
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
               />
             </div>
 

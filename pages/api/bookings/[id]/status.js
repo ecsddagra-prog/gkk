@@ -40,16 +40,46 @@ export default async function handler(req, res) {
 
         // Check if user is either the customer or the assigned provider
         const isCustomer = existingBooking.user_id === user.id
-        const isProvider = existingBooking.provider?.user_id === user.id
+        const isAssignedProvider = existingBooking.provider?.user_id === user.id
 
-        if (!isCustomer && !isProvider) {
+        // Check if user is a registered provider (for accepting unassigned bookings)
+        const { data: requestingProvider } = await supabaseAdmin
+            .from('providers')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+        const isRegisteredProvider = !!requestingProvider
+
+        // Allow if:
+        // 1. Is Customer
+        // 2. Is Assigned Provider
+        // 3. Is Registered Provider AND Booking is Unassigned AND Status is 'confirmed' (Accepting)
+        const canAcceptUnassigned = isRegisteredProvider && !existingBooking.provider_id && status === 'confirmed'
+
+        if (!isCustomer && !isAssignedProvider && !canAcceptUnassigned) {
             return res.status(403).json({ error: 'You do not have permission to update this booking' })
         }
 
         // 1. Update booking status
+        const updateData = { status }
+
+        // If accepting an unassigned booking, assign it to this provider
+        if (canAcceptUnassigned) {
+            updateData.provider_id = requestingProvider.id
+        }
+
+        if (req.body.final_price) {
+            updateData.final_price = req.body.final_price
+        }
+        if (req.body.payment_method) {
+            updateData.payment_method = req.body.payment_method
+            updateData.payment_status = 'paid'
+        }
+
         const { data: booking, error: updateError } = await supabaseAdmin
             .from('bookings')
-            .update({ status })
+            .update(updateData)
             .eq('id', id)
             .select('*, user:users(id, full_name), service:services(name)')
             .single()
