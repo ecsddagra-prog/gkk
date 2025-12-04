@@ -1,0 +1,286 @@
+/* Service Management Styles */
+
+.servicesContainer {
+    padding: var(--space-8);
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.pageTitle {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.filterGroup {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Service Grid */
+.servicesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+.serviceCard {
+    position: relative;
+    padding: var(--space-6);
+    transition: all var(--transition-base);
+}
+
+.serviceCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.serviceCard.disabled {
+    opacity: 0.6;
+}
+
+.serviceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: var(--space-4);
+}
+
+.serviceInfo {
+    flex: 1;
+}
+
+.serviceName {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.categoryName {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+}
+
+/* Toggle Switch */
+.toggleSwitch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background: var(--color-gray-300);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    border: none;
+}
+
+.toggleSwitch.active {
+    background: var(--color-emerald-500);
+}
+
+.toggleKnob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: var(--radius-sm);
+    transition: transform var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.toggleSwitch.active .toggleKnob {
+    transform: translateX(24px);
+}
+
+/* Pricing Section */
+.pricingSection {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.pricingGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.priceInput {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.priceLabel {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.priceInputField {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.priceInputField input {
+    flex: 1;
+    min-width: 0;
+}
+
+.currency {
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Sub-services */
+.subServices {
+    margin-top: var(--space-3);
+}
+
+.subServicesTitle {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.subServicesList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.subServiceItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.subServiceName {
+    flex: 1;
+    color: var(--color-text-secondary);
+}
+
+.subServiceRate {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.subServiceRate input {
+    width: 80px;
+}
+
+.cardActions {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: var(--space-16) var(--space-4);
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.emptyTitle {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.emptyText {
+    color: var(--color-text-secondary);
+}
+
+/* Requests Section */
+.requestsSection {
+    margin-top: var(--space-12);
+}
+
+.sectionTitle {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.requestsTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.requestsTable thead th {
+    background: var(--color-background-secondary);
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.requestsTable tbody td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.requestsTable tbody tr:hover {
+    background: var(--color-background-secondary);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .servicesContainer {
+        padding: var(--space-4);
+    }
+
+    .pageHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .servicesGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .pricingGrid {
+        grid-template-columns: 1fr;
+    }
+}

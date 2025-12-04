@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import ProviderLayout from '../../components/provider/ProviderLayout'
+import ProviderHome from '../../components/provider/ProviderHome'
 import MyProfile from '../../components/provider/MyProfile'
 import ServiceManagement from '../../components/provider/ServiceManagement'
 import LocationManagement from '../../components/provider/LocationManagement'
@@ -14,8 +15,14 @@ import PaymentSettings from '../../components/provider/PaymentSettings'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
-  const [activeModule, setActiveModule] = useState('earnings')
+  const [activeModule, setActiveModule] = useState('home')
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (router.isReady && router.query.module) {
+      setActiveModule(router.query.module)
+    }
+  }, [router.isReady, router.query.module])
 
   useEffect(() => {
     if (!user) {
@@ -55,6 +62,7 @@ export default function ProviderDashboard({ user }) {
 
   const renderModule = () => {
     switch (activeModule) {
+      case 'home': return <ProviderHome user={user} />
       case 'profile': return <MyProfile />
       case 'services': return <ServiceManagement />
       case 'location-management': return <LocationManagement />
@@ -64,7 +72,7 @@ export default function ProviderDashboard({ user }) {
       case 'staff': return <StaffManagement />
       case 'earnings': return <Earnings user={user} />
       case 'payment-settings': return <PaymentSettings />
-      default: return <Earnings user={user} />
+      default: return <ProviderHome user={user} />
     }
   }
 

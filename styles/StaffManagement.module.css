@@ -1,0 +1,193 @@
+/* Staff Management Styles */
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Add Form */
+.addForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Staff Grid */
+.staffGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
+}
+
+.staffCard {
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.staffCard:hover {
+    background: var(--color-background);
+    box-shadow: var(--shadow-sm);
+}
+
+.staffHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.staffInfo {
+    flex: 1;
+}
+
+.staffName {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-1) 0;
+}
+
+.staffRole {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.statusBadge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.statusBadge.active {
+    background: var(--color-emerald-50);
+    color: var(--color-emerald-700);
+}
+
+.statusBadge:hover {
+    opacity: 0.8;
+}
+
+.staffContact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.staffProof {
+    padding-top: var(--space-2);
+}
+
+.proofLink {
+    font-size: var(--font-size-sm);
+    color: var(--color-primary-600);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.proofLink:hover {
+    color: var(--color-primary-700);
+    text-decoration: underline;
+}
+
+.staffActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: var(--space-16) var(--space-4);
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.emptyTitle {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.emptyText {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--space-4);
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .formActions {
+        justify-content: stretch;
+    }
+
+    .formActions button {
+        width: 100%;
+    }
+
+    .staffGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .staffHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .statusBadge {
+        width: fit-content;
+    }
+}

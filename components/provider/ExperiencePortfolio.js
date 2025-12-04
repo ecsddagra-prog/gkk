@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import { Briefcase, Award, Image as ImageIcon, Trash2, Plus } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardBody, Button, FormInput, FormTextarea, LoadingSkeleton } from '../shared'
 import ImageUpload from '../ImageUpload'
+import styles from '../../styles/ExperiencePortfolio.module.css'
 
 export default function ExperiencePortfolio() {
     const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
     const [profile, setProfile] = useState({
         short_bio: '',
         experience_years: 0,
@@ -40,6 +44,7 @@ export default function ExperiencePortfolio() {
     }
 
     const updateProfile = async () => {
+        setSaving(true)
         try {
             const { data: { session } } = await supabase.auth.getSession()
             await axios.put('/api/provider/profile', profile, {
@@ -49,12 +54,17 @@ export default function ExperiencePortfolio() {
         } catch (error) {
             console.error('Error updating profile:', error)
             toast.error('Failed to update profile')
+        } finally {
+            setSaving(false)
         }
     }
 
     const addImage = async (e) => {
         e.preventDefault()
-        if (!newImage.image_url) return
+        if (!newImage.image_url) {
+            toast.error('Please upload an image')
+            return
+        }
 
         try {
             setAddingImage(true)
@@ -91,126 +101,155 @@ export default function ExperiencePortfolio() {
         }
     }
 
-    if (loading) return <div className="p-4">Loading profile...</div>
+    if (loading) {
+        return (
+            <div className={styles.container}>
+                <LoadingSkeleton variant="rect" width="100%" height="400px" />
+            </div>
+        )
+    }
 
     return (
-        <div className="space-y-8">
-            {/* Professional Profile */}
-            <div className="bg-white p-6 rounded-lg shadow space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Professional Profile</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</label>
-                        <input
-                            type="number"
-                            value={profile.experience_years}
-                            onChange={(e) => setProfile({ ...profile, experience_years: parseInt(e.target.value) || 0 })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        />
+        <div className={styles.container}>
+            {/* Professional Profile Card */}
+            <Card>
+                <CardHeader>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <Briefcase size={20} style={{ color: 'var(--color-primary-600)' }} />
+                        <CardTitle>Professional Profile</CardTitle>
                     </div>
+                </CardHeader>
+                <CardBody>
+                    <div className={styles.profileForm}>
+                        <div className={styles.formRow}>
+                            <FormInput
+                                label="Years of Experience"
+                                type="number"
+                                value={profile.experience_years}
+                                onChange={(e) => setProfile({ ...profile, experience_years: parseInt(e.target.value) || 0 })}
+                                placeholder="0"
+                                helpText="Total years in this field"
+                            />
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Past Companies / Brands (Optional)</label>
-                        <input
-                            type="text"
-                            value={profile.past_companies || ''}
-                            onChange={(e) => setProfile({ ...profile, past_companies: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="e.g. Urban Company, Local Agency"
-                        />
-                    </div>
+                            <FormInput
+                                label="Past Companies / Brands"
+                                type="text"
+                                value={profile.past_companies || ''}
+                                onChange={(e) => setProfile({ ...profile, past_companies: e.target.value })}
+                                placeholder="e.g. Urban Company, Local Agency"
+                                helpText="Optional - helps build trust"
+                            />
+                        </div>
 
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Short Bio</label>
-                        <textarea
-                            rows={4}
+                        <FormTextarea
+                            label="Short Bio"
                             value={profile.short_bio || ''}
                             onChange={(e) => setProfile({ ...profile, short_bio: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Tell customers about your expertise..."
+                            rows={4}
+                            placeholder="Tell customers about your expertise, specializations, and what makes you stand out..."
+                            helpText="A compelling bio helps customers choose you"
                         />
-                    </div>
-                </div>
 
-                <div className="flex justify-end">
-                    <button
-                        onClick={updateProfile}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                    >
-                        Save Profile
-                    </button>
-                </div>
-            </div>
-
-            {/* Portfolio */}
-            <div className="bg-white p-6 rounded-lg shadow space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Work Portfolio</h3>
-
-                {/* Add New Image Form */}
-                <form onSubmit={addImage} className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-                    <h4 className="text-sm font-medium text-gray-700">Add New Work Photo</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
-                            <ImageUpload
-                                label="Portfolio Image"
-                                value={newImage.image_url}
-                                onChange={(url) => setNewImage({ ...newImage, image_url: url })}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                type="text"
-                                value={newImage.description}
-                                onChange={(e) => setNewImage({ ...newImage, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                placeholder="Description (Optional)"
-                            />
+                        <div className={styles.formActions}>
+                            <Button
+                                variant="primary"
+                                onClick={updateProfile}
+                                loading={saving}
+                            >
+                                <Award size={18} />
+                                Save Profile
+                            </Button>
                         </div>
                     </div>
-                    <div className="flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={addingImage}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        >
-                            {addingImage ? 'Adding...' : 'Add Photo'}
-                        </button>
-                    </div>
-                </form>
+                </CardBody>
+            </Card>
 
-                {/* Image Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {portfolio.map(item => (
-                        <div key={item.id} className="relative group bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                                src={item.image_url}
-                                alt={item.description || 'Portfolio'}
-                                className="w-full h-48 object-cover"
-                                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error' }}
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <button
-                                    onClick={() => deleteImage(item.id)}
-                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                                >
-                                    Delete
-                                </button>
+            {/* Work Portfolio Card */}
+            <Card>
+                <CardHeader>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <ImageIcon size={20} style={{ color: 'var(--color-primary-600)' }} />
+                        <CardTitle>Work Portfolio</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardBody>
+                    {/* Add New Image Form */}
+                    <form onSubmit={addImage} className={styles.addImageForm}>
+                        <h4 className={styles.formTitle}>
+                            <Plus size={18} />
+                            Add New Work Photo
+                        </h4>
+                        <div className={styles.uploadGrid}>
+                            <div className={styles.uploadSection}>
+                                <ImageUpload
+                                    label="Portfolio Image"
+                                    value={newImage.image_url}
+                                    onChange={(url) => setNewImage({ ...newImage, image_url: url })}
+                                />
                             </div>
-                            {item.description && (
-                                <div className="p-2 text-sm text-gray-700 bg-white border-t">
-                                    {item.description}
-                                </div>
-                            )}
+                            <div className={styles.descriptionSection}>
+                                <FormInput
+                                    label="Description (Optional)"
+                                    type="text"
+                                    value={newImage.description}
+                                    onChange={(e) => setNewImage({ ...newImage, description: e.target.value })}
+                                    placeholder="e.g. AC Installation, Kitchen Repair..."
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    loading={addingImage}
+                                    disabled={!newImage.image_url}
+                                    style={{ marginTop: 'auto' }}
+                                >
+                                    Add Photo
+                                </Button>
+                            </div>
                         </div>
-                    ))}
-                    {portfolio.length === 0 && (
-                        <div className="col-span-full text-center py-8 text-gray-500">
-                            No portfolio images added yet.
+                    </form>
+
+                    {/* Image Grid */}
+                    {portfolio.length > 0 ? (
+                        <div className={styles.portfolioGrid}>
+                            {portfolio.map(item => (
+                                <div key={item.id} className={styles.portfolioItem}>
+                                    <div className={styles.imageWrapper}>
+                                        <img
+                                            src={item.image_url}
+                                            alt={item.description || 'Portfolio'}
+                                            className={styles.portfolioImage}
+                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error' }}
+                                        />
+                                        <div className={styles.imageOverlay}>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => deleteImage(item.id)}
+                                            >
+                                                <Trash2 size={16} />
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {item.description && (
+                                        <div className={styles.imageDescription}>
+                                            {item.description}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>📸</div>
+                            <h3 className={styles.emptyTitle}>No Portfolio Images</h3>
+                            <p className={styles.emptyText}>
+                                Add photos of your best work to attract more customers
+                            </p>
                         </div>
                     )}
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </div>
     )
 }

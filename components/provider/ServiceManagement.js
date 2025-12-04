@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import { Wrench, DollarSign, CheckCircle2, XCircle } from 'lucide-react'
+import { Button, Card, Badge, Modal, ModalFooter, FormInput, FormSelect, LoadingSkeleton } from '../shared'
+import styles from '../../styles/ServiceManagement.module.css'
 
 export default function ServiceManagement() {
     const [services, setServices] = useState([])
@@ -9,8 +12,8 @@ export default function ServiceManagement() {
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [showRequestModal, setShowRequestModal] = useState(false)
-    const [showAllServices, setShowAllServices] = useState(false) // New state for filtering
-    const [selectedCategory, setSelectedCategory] = useState('') // New state for category filtering
+    const [showAllServices, setShowAllServices] = useState(false)
+    const [selectedCategory, setSelectedCategory] = useState('')
     const [requestForm, setRequestForm] = useState({
         service_name: '',
         category_id: '',
@@ -44,7 +47,6 @@ export default function ServiceManagement() {
         }
     }
 
-    // Filter services based on toggle and category
     const filteredServices = (showAllServices ? services : services.filter(s => s.is_enabled))
         .filter(s => !selectedCategory || s.category_id === selectedCategory)
 
@@ -52,10 +54,9 @@ export default function ServiceManagement() {
         try {
             const { data: { session } } = await supabase.auth.getSession()
 
-            // Prepare sub-service rates
             const sub_service_rates = service.subservices?.map(sub => ({
                 sub_service_id: sub.id,
-                rate: sub.provider_rate || sub.base_charge // Default to base charge if no custom rate set yet
+                rate: sub.provider_rate || sub.base_charge
             })) || []
 
             await axios.put('/api/provider/services', {
@@ -111,7 +112,7 @@ export default function ServiceManagement() {
             toast.success('Request submitted successfully')
             setShowRequestModal(false)
             setRequestForm({ service_name: '', category_id: '', description: '' })
-            fetchData() // Refresh requests
+            fetchData()
         } catch (error) {
             console.error('Error submitting request:', error)
             toast.error('Failed to submit request')
@@ -120,239 +121,252 @@ export default function ServiceManagement() {
         }
     }
 
-    if (loading) return <div className="p-4">Loading services...</div>
+    if (loading) {
+        return (
+            <div className={styles.servicesContainer}>
+                <LoadingSkeleton variant="rect" width="100%" height="400px" />
+            </div>
+        )
+    }
 
     return (
-        <div className="space-y-8">
-            {/* Active Services Section */}
-            <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            {showAllServices ? 'All Available Services' : 'My Services'}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                            <select
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">All Categories</option>
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                            <button
-                                onClick={() => setShowAllServices(!showAllServices)}
-                                className="px-3 py-1 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
-                            >
-                                {showAllServices ? 'Show My Services Only' : 'Browse All Services'}
-                            </button>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setShowRequestModal(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                    >
-                        Request New Service
-                    </button>
-                </div>
-
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pricing (₹)</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredServices.map(service => (
-                                <tr key={service.id} className={service.is_enabled ? 'bg-white' : 'bg-gray-50'}>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                                        <div className="text-xs text-gray-500">{service.service_categories?.name}</div>
-
-                                        {/* Subservices List */}
-                                        {service.subservices && service.subservices.length > 0 && (
-                                            <div className="mt-2 pl-2 border-l-2 border-gray-200">
-                                                <div className="text-xs font-medium text-gray-500 mb-1">Sub-services:</div>
-                                                <ul className="text-xs text-gray-600 space-y-2">
-                                                    {service.subservices.map(sub => (
-                                                        <li key={sub.id} className="flex items-center gap-2">
-                                                            <span className="w-32 truncate" title={sub.name}>• {sub.name}</span>
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="text-gray-400">₹</span>
-                                                                <input
-                                                                    type="number"
-                                                                    value={sub.provider_rate !== null ? sub.provider_rate : ''}
-                                                                    onChange={(e) => handleSubServiceChange(service.id, sub.id, e.target.value)}
-                                                                    placeholder="Rate"
-                                                                    className="w-20 px-2 py-1 text-xs border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                                    disabled={!service.is_enabled}
-                                                                />
-                                                                {sub.pricing_type === 'hourly' && <span className="text-gray-400">/hr</span>}
-                                                            </div>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap align-top">
-                                        <button
-                                            onClick={() => handleChange(service.id, 'is_enabled', !service.is_enabled)}
-                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${service.is_enabled ? 'bg-green-600' : 'bg-gray-200'
-                                                }`}
-                                        >
-                                            <span
-                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${service.is_enabled ? 'translate-x-5' : 'translate-x-0'
-                                                    }`}
-                                            />
-                                        </button>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap align-top">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs text-gray-500 w-20">Inspection:</label>
-                                                <input
-                                                    type="number"
-                                                    value={service.inspection_fee}
-                                                    onChange={(e) => handleChange(service.id, 'inspection_fee', parseFloat(e.target.value))}
-                                                    className="w-24 px-2 py-1 text-sm border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    disabled={!service.is_enabled}
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs text-gray-500 w-20">Emergency:</label>
-                                                <input
-                                                    type="number"
-                                                    value={service.emergency_fee}
-                                                    onChange={(e) => handleChange(service.id, 'emergency_fee', parseFloat(e.target.value))}
-                                                    className="w-24 px-2 py-1 text-sm border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    disabled={!service.is_enabled}
-                                                />
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap align-top">
-                                        <button
-                                            onClick={() => handleUpdate(service)}
-                                            disabled={!service.is_enabled}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Save
-                                        </button>
-                                    </td>
-                                </tr>
+        <div className={styles.servicesContainer}>
+            {/* Header */}
+            <div className={styles.pageHeader}>
+                <div className={styles.headerLeft}>
+                    <h2 className={styles.pageTitle}>
+                        {showAllServices ? 'All Available Services' : 'My Services'}
+                    </h2>
+                    <div className={styles.filterGroup}>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="select"
+                        >
+                            <option value="">All Categories</option>
+                            {categories.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
-                        </tbody>
-                    </table>
+                        </select>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAllServices(!showAllServices)}
+                        >
+                            {showAllServices ? 'My Services Only' : 'Browse All'}
+                        </Button>
+                    </div>
                 </div>
+                <Button
+                    variant="primary"
+                    onClick={() => setShowRequestModal(true)}
+                >
+                    Request New Service
+                </Button>
             </div>
 
-            {/* Service Requests Section */}
+            {/* Services Grid */}
+            {filteredServices.length === 0 ? (
+                <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>🛠️</div>
+                    <h3 className={styles.emptyTitle}>No services found</h3>
+                    <p className={styles.emptyText}>
+                        {showAllServices
+                            ? 'No services available in this category'
+                            : 'Enable some services to get started'
+                        }
+                    </p>
+                </div>
+            ) : (
+                <div className={styles.servicesGrid}>
+                    {filteredServices.map(service => (
+                        <Card key={service.id} className={`${styles.serviceCard} ${!service.is_enabled ? styles.disabled : ''}`}>
+                            <div className={styles.serviceHeader}>
+                                <div className={styles.serviceInfo}>
+                                    <h3 className={styles.serviceName}>{service.name}</h3>
+                                    <p className={styles.categoryName}>{service.service_categories?.name}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleChange(service.id, 'is_enabled', !service.is_enabled)}
+                                    className={`${styles.toggleSwitch} ${service.is_enabled ? styles.active : ''}`}
+                                    title={service.is_enabled ? 'Enabled' : 'Disabled'}
+                                >
+                                    <span className={styles.toggleKnob}></span>
+                                </button>
+                            </div>
+
+                            <div className={styles.pricingSection}>
+                                <div className={styles.pricingGrid}>
+                                    <div className={styles.priceInput}>
+                                        <label className={styles.priceLabel}>Minimum Rate</label>
+                                        <div className={styles.priceInputField}>
+                                            <span className={styles.currency}>₹</span>
+                                            <input
+                                                type="number"
+                                                value={service.provider_price || ''}
+                                                onChange={(e) => handleChange(service.id, 'provider_price', parseFloat(e.target.value))}
+                                                className="input"
+                                                disabled={!service.is_enabled}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className={styles.priceInput}>
+                                        <label className={styles.priceLabel}>Inspection Fee</label>
+                                        <div className={styles.priceInputField}>
+                                            <span className={styles.currency}>₹</span>
+                                            <input
+                                                type="number"
+                                                value={service.inspection_fee || ''}
+                                                onChange={(e) => handleChange(service.id, 'inspection_fee', parseFloat(e.target.value))}
+                                                className="input"
+                                                disabled={!service.is_enabled}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className={styles.priceInput}>
+                                        <label className={styles.priceLabel}>Emergency Fee</label>
+                                        <div className={styles.priceInputField}>
+                                            <span className={styles.currency}>₹</span>
+                                            <input
+                                                type="number"
+                                                value={service.emergency_fee || ''}
+                                                onChange={(e) => handleChange(service.id, 'emergency_fee', parseFloat(e.target.value))}
+                                                className="input"
+                                                disabled={!service.is_enabled}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sub-services */}
+                                {service.subservices && service.subservices.length > 0 && (
+                                    <div className={styles.subServices}>
+                                        <div className={styles.subServicesTitle}>Sub-services</div>
+                                        <div className={styles.subServicesList}>
+                                            {service.subservices.map(sub => (
+                                                <div key={sub.id} className={styles.subServiceItem}>
+                                                    <span className={styles.subServiceName}>• {sub.name}</span>
+                                                    <div className={styles.subServiceRate}>
+                                                        <span className={styles.currency}>₹</span>
+                                                        <input
+                                                            type="number"
+                                                            value={sub.provider_rate !== null ? sub.provider_rate : ''}
+                                                            onChange={(e) => handleSubServiceChange(service.id, sub.id, e.target.value)}
+                                                            placeholder="Rate"
+                                                            className="input"
+                                                            disabled={!service.is_enabled}
+                                                        />
+                                                        {sub.pricing_type === 'hourly' && <span className="text-gray-400">/hr</span>}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={styles.cardActions}>
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => handleUpdate(service)}
+                                    disabled={!service.is_enabled}
+                                    style={{ width: '100%' }}
+                                >
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+
+            {/* Service Requests */}
             {requests.length > 0 && (
-                <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">My Service Requests</h2>
-                    <div className="bg-white rounded-lg shadow overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                <div className={styles.requestsSection}>
+                    <h3 className={styles.sectionTitle}>My Service Requests</h3>
+                    <Card>
+                        <table className={styles.requestsTable}>
+                            <thead>
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th>Service Name</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 {requests.map(req => (
                                     <tr key={req.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {req.service_name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {categories.find(c => c.id === req.category_id)?.name || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${req.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                                    req.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                                        'bg-yellow-100 text-yellow-800'}`}>
+                                        <td>{req.service_name}</td>
+                                        <td>{categories.find(c => c.id === req.category_id)?.name || '-'}</td>
+                                        <td>
+                                            <Badge variant={
+                                                req.status === 'approved' ? 'success' :
+                                                    req.status === 'rejected' ? 'error' :
+                                                        'warning'
+                                            }>
                                                 {req.status}
-                                            </span>
+                                            </Badge>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(req.created_at).toLocaleDateString()}
-                                        </td>
+                                        <td>{new Date(req.created_at).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </Card>
                 </div>
             )}
 
             {/* Request Modal */}
-            {showRequestModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-md w-full p-6">
-                        <h3 className="text-lg font-bold mb-4">Request New Service</h3>
-                        <form onSubmit={handleRequestSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Service Name *</label>
-                                <input
-                                    type="text"
-                                    value={requestForm.service_name}
-                                    onChange={e => setRequestForm({ ...requestForm, service_name: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <select
-                                    value={requestForm.category_id}
-                                    onChange={e => setRequestForm({ ...requestForm, category_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea
-                                    value={requestForm.description}
-                                    onChange={e => setRequestForm({ ...requestForm, description: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    rows={3}
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRequestModal(false)}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submitting}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {submitting ? 'Submitting...' : 'Submit Request'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <Modal
+                isOpen={showRequestModal}
+                onClose={() => setShowRequestModal(false)}
+                title="Request New Service"
+                size="sm"
+            >
+                <form onSubmit={handleRequestSubmit}>
+                    <FormInput
+                        label="Service Name"
+                        value={requestForm.service_name}
+                        onChange={(e) => setRequestForm({ ...requestForm, service_name: e.target.value })}
+                        required
+                        placeholder="e.g. AC Installation"
+                    />
+                    <FormSelect
+                        label="Category"
+                        value={requestForm.category_id}
+                        onChange={(e) => setRequestForm({ ...requestForm, category_id: e.target.value })}
+                        options={[
+                            { value: '', label: 'Select Category' },
+                            ...categories.map(c => ({ value: c.id, label: c.name }))
+                        ]}
+                    />
+                    <FormInput
+                        label="Description"
+                        value={requestForm.description}
+                        onChange={(e) => setRequestForm({ ...requestForm, description: e.target.value })}
+                        placeholder="Optional details..."
+                        type="textarea"
+                        rows={3}
+                    />
+                    <ModalFooter>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setShowRequestModal(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="submit" variant="primary" loading={submitting}>
+                            Submit Request
+                        </Button>
+                    </ModalFooter>
+                </form>
+            </Modal>
         </div>
     )
 }

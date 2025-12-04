@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { DollarSign, TrendingUp, CheckCircle, XCircle, Star, Calendar } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardBody, LoadingSkeleton } from '../shared'
+import StatCard from './StatCard'
+import { formatCurrency, formatDate } from '../../lib/utils'
+import styles from '../../styles/Earnings.module.css'
 
 export default function Earnings({ user }) {
     const [loading, setLoading] = useState(true)
@@ -23,8 +28,8 @@ export default function Earnings({ user }) {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setStats(data.stats)
-            setTransactions(data.recentTransactions)
-            setReviews(data.recentReviews)
+            setTransactions(data.recentTransactions || [])
+            setReviews(data.recentReviews || [])
         } catch (error) {
             console.error('Error loading stats:', error)
             toast.error('Failed to load earnings data')
@@ -35,115 +40,123 @@ export default function Earnings({ user }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className={styles.container}>
+                <LoadingSkeleton variant="rect" width="100%" height="400px" />
             </div>
         )
     }
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">Earnings & Performance</h1>
-
+        <div className={styles.container}>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-                    <p className="text-sm text-gray-500">Total Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900">₹{stats?.totalEarnings?.toLocaleString() || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
-                    <p className="text-sm text-gray-500">Pending Clearance</p>
-                    <p className="text-2xl font-bold text-gray-900">₹{stats?.pendingEarnings?.toLocaleString() || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
-                    <p className="text-sm text-gray-500">Completed Orders</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.orderCounts?.completed || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
-                    <p className="text-sm text-gray-500">Cancelled Orders</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats?.orderCounts?.cancelled || 0}</p>
-                </div>
+            <div className={styles.statsGrid}>
+                <StatCard
+                    IconComponent={DollarSign}
+                    label="Total Earnings"
+                    value={formatCurrency(stats?.totalEarnings || 0)}
+                    accentColor="green"
+                    trend="+12%"
+                />
+                <StatCard
+                    IconComponent={TrendingUp}
+                    label="Pending Clearance"
+                    value={formatCurrency(stats?.pendingEarnings || 0)}
+                    accentColor="yellow"
+                />
+                <StatCard
+                    IconComponent={CheckCircle}
+                    label="Completed Orders"
+                    value={stats?.orderCounts?.completed || 0}
+                    accentColor="blue"
+                />
+                <StatCard
+                    IconComponent={XCircle}
+                    label="Cancelled Orders"
+                    value={stats?.orderCounts?.cancelled || 0}
+                    accentColor="red"
+                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Transactions */}
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="px-6 py-4 border-b">
-                        <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {transactions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="3" className="px-6 py-4 text-center text-sm text-gray-500">
-                                            No completed transactions yet
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    transactions.map((tx) => (
-                                        <tr key={tx.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {/* Transactions & Reviews */}
+            <div className={styles.contentGrid}>
+                {/* Recent Transactions Card */}
+                <Card>
+                    <CardHeader>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <DollarSign size={20} style={{ color: 'var(--color-primary-600)' }} />
+                            <CardTitle>Recent Transactions</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardBody>
+                        {transactions.length > 0 ? (
+                            <div className={styles.transactionsList}>
+                                {transactions.map((tx) => (
+                                    <div key={tx.id} className={styles.transactionItem}>
+                                        <div className={styles.transactionInfo}>
+                                            <h4 className={styles.transactionService}>
                                                 {tx.service?.name || 'Service'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(tx.created_at).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600">
-                                                +₹{tx.final_price}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Customer Reviews */}
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="px-6 py-4 border-b">
-                        <h2 className="text-lg font-semibold text-gray-900">Customer Reviews</h2>
-                    </div>
-                    <div className="divide-y divide-gray-200 max-h-[400px] overflow-y-auto">
-                        {reviews.length === 0 ? (
-                            <div className="p-6 text-center text-sm text-gray-500">
-                                No reviews yet
-                            </div>
-                        ) : (
-                            reviews.map((review) => (
-                                <div key={review.id} className="p-6 hover:bg-gray-50">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-medium text-gray-900">
-                                                {review.user?.full_name || 'Anonymous'}
-                                            </div>
-                                            <span className="text-xs text-gray-500">
-                                                • {new Date(review.created_at).toLocaleDateString()}
-                                            </span>
+                                            </h4>
+                                            <p className={styles.transactionDate}>
+                                                <Calendar size={12} />
+                                                {formatDate(tx.created_at)}
+                                            </p>
                                         </div>
-                                        <div className="flex text-yellow-400 text-sm">
-                                            {'★'.repeat(Math.round(review.rating))}
-                                            <span className="text-gray-300">
-                                                {'★'.repeat(5 - Math.round(review.rating))}
-                                            </span>
+                                        <div className={styles.transactionAmount}>
+                                            {formatCurrency(tx.final_price || 0)}
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-600 italic">
-                                        &quot;{review.review_text || 'No comment provided'}&quot;
-                                    </p>
-                                </div>
-                            ))
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={styles.emptyState}>
+                                <div className={styles.emptyIcon}>💰</div>
+                                <p className={styles.emptyText}>No completed transactions yet</p>
+                            </div>
                         )}
-                    </div>
-                </div>
+                    </CardBody>
+                </Card>
+
+                {/* Customer Reviews Card */}
+                <Card>
+                    <CardHeader>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <Star size={20} style={{ color: 'var(--color-primary-600)' }} />
+                            <CardTitle>Customer Reviews</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardBody>
+                        {reviews.length > 0 ? (
+                            <div className={styles.reviewsList}>
+                                {reviews.map((review) => (
+                                    <div key={review.id} className={styles.reviewItem}>
+                                        <div className={styles.reviewHeader}>
+                                            <div className={styles.reviewerInfo}>
+                                                <span className={styles.reviewerName}>
+                                                    {review.user?.full_name || 'Anonymous'}
+                                                </span>
+                                                <span className={styles.reviewDate}>
+                                                    {formatDate(review.created_at)}
+                                                </span>
+                                            </div>
+                                            <div className={styles.reviewRating}>
+                                                <Star size={14} fill="var(--color-amber-500)" color="var(--color-amber-500)" />
+                                                <span>{review.rating.toFixed(1)}</span>
+                                            </div>
+                                        </div>
+                                        <p className={styles.reviewText}>
+                                            "{review.review_text || 'No comment provided'}"
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={styles.emptyState}>
+                                <div className={styles.emptyIcon}>⭐</div>
+                                <p className={styles.emptyText}>No reviews yet</p>
+                            </div>
+                        )}
+                    </CardBody>
+                </Card>
             </div>
         </div>
     )

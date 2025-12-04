@@ -1,0 +1,367 @@
+/* Provider Home Dashboard Styles */
+
+.dashboardContainer {
+    padding: var(--space-6);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header removed - using ProviderLayout header */
+
+/* Stats Section */
+.statsSection {
+    margin-bottom: var(--space-8);
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-5);
+}
+
+/* Stat Cards */
+.statCard {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    border-left: 4px solid transparent;
+}
+
+.statCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.statIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    flex-shrink: 0;
+}
+
+.statContent {
+    flex: 1;
+}
+
+.statLabel {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-1);
+}
+
+.statValueRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.statValue {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.statTrend {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+}
+
+.trendUp {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+}
+
+.trendDown {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+}
+
+/* Accent Colors */
+.accentGreen {
+    border-left-color: var(--color-emerald-500);
+}
+
+.accentGreen .statIcon {
+    background: var(--color-emerald-50);
+    color: var(--color-emerald-600);
+}
+
+.accentBlue {
+    border-left-color: var(--color-blue-500);
+}
+
+.accentBlue .statIcon {
+    background: var(--color-blue-50);
+    color: var(--color-blue-600);
+}
+
+.accentYellow {
+    border-left-color: var(--color-amber-500);
+}
+
+.accentYellow .statIcon {
+    background: var(--color-amber-50);
+    color: var(--color-amber-600);
+}
+
+.accentRed {
+    border-left-color: var(--color-red-500);
+}
+
+.accentRed .statIcon {
+    background: var(--color-red-50);
+    color: var(--color-red-600);
+}
+
+.accentPurple {
+    border-left-color: var(--color-purple-500);
+}
+
+.accentPurple .statIcon {
+    background: var(--color-purple-50);
+    color: var(--color-purple-600);
+}
+
+/* Insights Section */
+.insightsSection {
+    margin-bottom: var(--space-8);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.sectionTitle {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.periodToggle {
+    display: flex;
+    gap: var(--space-2);
+    background: var(--color-background-secondary);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+}
+
+.periodToggle button {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.periodToggle button.active {
+    background: var(--color-primary-600);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.periodToggle button:hover:not(.active) {
+    background: var(--color-background);
+}
+
+/* Chart Container */
+.chartContainer {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Recent Activity Section */
+.activitySection {
+    margin-bottom: var(--space-8);
+}
+
+.activityGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-6);
+}
+
+.activityCard {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.activityTitle {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-4) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Booking List */
+.bookingsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.bookingItem {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--color-background-secondary);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.bookingItem:hover {
+    background: var(--color-primary-50);
+    transform: translateX(4px);
+}
+
+.bookingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: var(--space-2);
+}
+
+.bookingService {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.bookingDetails {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.bookingDetail {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+/* Reviews List */
+.reviewsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.reviewItem {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--color-background-secondary);
+}
+
+.reviewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.reviewerName {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.reviewStars {
+    color: var(--color-amber-500);
+}
+
+.reviewText {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.reviewDate {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-2);
+}
+
+/* Empty States */
+.emptyState {
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+    color: var(--color-text-tertiary);
+}
+
+.emptyIcon {
+    font-size: 3rem;
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+.emptyText {
+    font-size: var(--font-size-sm);
+}
+
+/* Loading State */
+.loadingContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .dashboardContainer {
+        padding: var(--space-4);
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .activityGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .periodToggle {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .periodToggle button {
+        flex: 1;
+    }
+
+    .statValue {
+        font-size: var(--font-size-xl);
+    }
+}

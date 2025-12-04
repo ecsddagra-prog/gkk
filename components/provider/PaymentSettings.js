@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import axios from 'axios'
+import { CreditCard, Building2, Smartphone, Upload as UploadIcon, Save } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardBody, Button, FormInput, LoadingSkeleton } from '../shared'
+import styles from '../../styles/PaymentSettings.module.css'
 
 export default function PaymentSettings() {
     const [loading, setLoading] = useState(true)
@@ -37,6 +40,7 @@ export default function PaymentSettings() {
             }
         } catch (error) {
             console.error('Error loading settings:', error)
+            toast.error('Failed to load payment settings')
         } finally {
             setLoading(false)
         }
@@ -87,7 +91,7 @@ export default function PaymentSettings() {
                 }
             })
 
-            toast.success('Payment settings saved successfully')
+            toast.success('Payment settings saved successfully!')
         } catch (error) {
             console.error('Save error:', error)
             toast.error('Failed to save payment settings')
@@ -98,180 +102,158 @@ export default function PaymentSettings() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className={styles.container}>
+                <LoadingSkeleton variant="rect" width="100%" height="400px" />
             </div>
         )
     }
 
-    return (
-        <div className="max-w-4xl">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Payment Settings</h2>
-                    <p className="text-gray-600 mt-1">Manage how you receive payments from customers</p>
-                </div>
+    const paymentMethods = [
+        { value: 'upi', label: 'UPI', icon: '📱' },
+        { value: 'bank', label: 'Bank Transfer', icon: '🏦' },
+        { value: 'cash', label: 'Cash', icon: '💵' },
+        { value: 'all', label: 'All Methods', icon: '💳' }
+    ]
 
-                <form onSubmit={handleSave} className="space-y-8">
-                    {/* Primary Payment Method */}
-                    <div className="pb-6 border-b">
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                            Primary Payment Method *
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                            {[
-                                { value: 'upi', label: 'UPI', icon: '📱' },
-                                { value: 'bank', label: 'Bank Transfer', icon: '🏦' },
-                                { value: 'cash', label: 'Cash', icon: '💵' },
-                                { value: 'all', label: 'All Methods', icon: '💳' }
-                            ].map(method => (
+    return (
+        <div className={styles.container}>
+            <form onSubmit={handleSave} className={styles.form}>
+                {/* Primary Method Card */}
+                <Card>
+                    <CardHeader>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <CreditCard size={20} style={{ color: 'var(--color-primary-600)' }} />
+                            <CardTitle>Primary Payment Method</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardBody>
+                        <p className={styles.description}>
+                            Select your preferred method for receiving payments from customers
+                        </p>
+                        <div className={styles.methodGrid}>
+                            {paymentMethods.map(method => (
                                 <button
                                     key={method.value}
                                     type="button"
                                     onClick={() => setSettings(prev => ({ ...prev, primary_method: method.value }))}
-                                    className={`p-4 border-2 rounded-lg transition-all ${settings.primary_method === method.value
-                                            ? 'border-blue-600 bg-blue-50'
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                    className={`${styles.methodCard} ${settings.primary_method === method.value ? styles.active : ''}`}
                                 >
-                                    <div className="text-3xl mb-2">{method.icon}</div>
-                                    <div className="text-sm font-medium">{method.label}</div>
+                                    <div className={styles.methodIcon}>{method.icon}</div>
+                                    <div className={styles.methodLabel}>{method.label}</div>
                                 </button>
                             ))}
                         </div>
-                    </div>
+                    </CardBody>
+                </Card>
 
-                    {/* Bank Transfer Details */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            🏦 Bank Transfer Details
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Account Holder Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.account_holder_name}
-                                    onChange={e => setSettings(prev => ({ ...prev, account_holder_name: e.target.value }))}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="John Doe"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Bank Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.bank_name}
-                                    onChange={e => setSettings(prev => ({ ...prev, bank_name: e.target.value }))}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="State Bank of India"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Account Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.account_number}
-                                    onChange={e => setSettings(prev => ({ ...prev, account_number: e.target.value }))}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="1234567890"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    IFSC Code
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.ifsc_code}
-                                    onChange={e => setSettings(prev => ({ ...prev, ifsc_code: e.target.value }))}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="SBIN0001234"
-                                />
-                            </div>
+                {/* Bank Details Card */}
+                <Card>
+                    <CardHeader>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <Building2 size={20} style={{ color: 'var(--color-primary-600)' }} />
+                            <CardTitle>Bank Transfer Details</CardTitle>
                         </div>
-                    </div>
+                    </CardHeader>
+                    <CardBody>
+                        <div className={styles.formGrid}>
+                            <FormInput
+                                label="Account Holder Name"
+                                type="text"
+                                value={settings.account_holder_name}
+                                onChange={e => setSettings(prev => ({ ...prev, account_holder_name: e.target.value }))}
+                                placeholder="John Doe"
+                            />
 
-                    {/* UPI Details */}
-                    <div className="space-y-4 pt-6 border-t">
-                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            📱 UPI / Digital Wallet
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    UPI ID
-                                </label>
-                                <input
+                            <FormInput
+                                label="Bank Name"
+                                type="text"
+                                value={settings.bank_name}
+                                onChange={e => setSettings(prev => ({ ...prev, bank_name: e.target.value }))}
+                                placeholder="State Bank of India"
+                            />
+
+                            <FormInput
+                                label="Account Number"
+                                type="text"
+                                value={settings.account_number}
+                                onChange={e => setSettings(prev => ({ ...prev, account_number: e.target.value }))}
+                                placeholder="1234567890"
+                            />
+
+                            <FormInput
+                                label="IFSC Code"
+                                type="text"
+                                value={settings.ifsc_code}
+                                onChange={e => setSettings(prev => ({ ...prev, ifsc_code: e.target.value }))}
+                                placeholder="SBIN0001234"
+                            />
+                        </div>
+                    </CardBody>
+                </Card>
+
+                {/* UPI Details Card */}
+                <Card>
+                    <CardHeader>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <Smartphone size={20} style={{ color: 'var(--color-primary-600)' }} />
+                            <CardTitle>UPI / Digital Wallet</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardBody>
+                        <div className={styles.upiSection}>
+                            <div className={styles.upiForm}>
+                                <FormInput
+                                    label="UPI ID"
                                     type="text"
                                     value={settings.upi_id}
                                     onChange={e => setSettings(prev => ({ ...prev, upi_id: e.target.value }))}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="yourname@upi"
+                                    helpText="e.g. 9876543210@paytm"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Payment QR Code
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <label className="cursor-pointer px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span>Upload QR</span>
+
+                            <div className={styles.qrSection}>
+                                <label className={styles.qrLabel}>Payment QR Code</label>
+                                <div className={styles.qrUpload}>
+                                    <label className={styles.uploadButton}>
+                                        <UploadIcon size={18} />
+                                        <span>{uploading ? 'Uploading...' : 'Upload QR'}</span>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={handleQRUpload}
                                             disabled={uploading}
-                                            className="hidden"
+                                            className={styles.fileInput}
                                         />
                                     </label>
-                                    {uploading && <span className="text-sm text-gray-500">Uploading...</span>}
+                                    {settings.qr_code_url && (
+                                        <div className={styles.qrPreview}>
+                                            <img
+                                                src={settings.qr_code_url}
+                                                alt="Payment QR Code"
+                                                className={styles.qrImage}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                {settings.qr_code_url && (
-                                    <div className="mt-3">
-                                        <img
-                                            src={settings.qr_code_url}
-                                            alt="Payment QR Code"
-                                            className="w-32 h-32 object-contain border rounded-lg"
-                                        />
-                                    </div>
-                                )}
                             </div>
                         </div>
-                    </div>
+                    </CardBody>
+                </Card>
 
-                    {/* Save Button */}
-                    <div className="flex justify-end pt-6 border-t">
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className={`px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md ${saving ? 'opacity-75 cursor-not-allowed' : ''
-                                }`}
-                        >
-                            {saving ? (
-                                <span className="flex items-center gap-2">
-                                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Saving...
-                                </span>
-                            ) : (
-                                'Save Payment Settings'
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                {/* Save Button */}
+                <div className={styles.formActions}>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        loading={saving}
+                    >
+                        <Save size={18} />
+                        Save Payment Settings
+                    </Button>
+                </div>
+            </form>
         </div>
     )
 }

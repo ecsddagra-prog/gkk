@@ -1,0 +1,203 @@
+/* My Profile Styles */
+
+.profileContainer {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Header Card */
+.headerCard {
+    background: linear-gradient(135deg, var(--gradient-primary-start), var(--gradient-primary-end));
+    color: white;
+    padding: var(--space-8);
+}
+
+.headerContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-6);
+}
+
+.avatarSection {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.avatarWrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-xl);
+}
+
+.avatarPlaceholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: white;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-xl);
+}
+
+.avatarUpload {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-fast);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatarUpload:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.avatarUpload svg {
+    color: var(--color-primary-600);
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadingOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.userInfo {
+    flex: 1;
+}
+
+.userName {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: white;
+    margin: 0 0 var(--space-2) 0;
+}
+
+.businessName {
+    font-size: var(--font-size-lg);
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 var(--space-3) 0;
+}
+
+.memberSince {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.logoutButton {
+    flex-shrink: 0;
+}
+
+/* Profile Form */
+.profileForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .profileContainer {
+        padding: var(--space-4);
+    }
+
+    .headerCard {
+        padding: var(--space-6);
+    }
+
+    .headerContent {
+        flex-direction: column;
+    }
+
+    .avatarSection {
+        flex-direction: column;
+        text-align: center;
+        width: 100%;
+    }
+
+    .userInfo {
+        width: 100%;
+    }
+
+    .userName {
+        font-size: var(--font-size-2xl);
+    }
+
+    .businessName {
+        font-size: var(--font-size-base);
+    }
+
+    .memberSince {
+        justify-content: center;
+    }
+
+    .logoutButton {
+        width: 100%;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .formActions {
+        justify-content: stretch;
+    }
+
+    .formActions button {
+        width: 100%;
+    }
+}

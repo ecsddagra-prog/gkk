@@ -1,0 +1,184 @@
+/* Experience & Portfolio Styles */
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Profile Form */
+.profileForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Add Image Form */
+.addImageForm {
+    background: var(--color-background-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
+    border: 1px solid var(--color-border);
+}
+
+.formTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-4) 0;
+}
+
+.uploadGrid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.uploadSection {
+    min-height: 200px;
+}
+
+.descriptionSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    height: 100%;
+}
+
+/* Portfolio Grid */
+.portfolioGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-5);
+}
+
+.portfolioItem {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+
+.portfolioItem:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.imageWrapper {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--color-background-secondary);
+}
+
+.portfolioImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-base);
+}
+
+.portfolioItem:hover .portfolioImage {
+    transform: scale(1.05);
+}
+
+.imageOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.portfolioItem:hover .imageOverlay {
+    opacity: 1;
+}
+
+.imageDescription {
+    padding: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: var(--space-16) var(--space-4);
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.emptyTitle {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.emptyText {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--space-4);
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .formActions {
+        justify-content: stretch;
+    }
+
+    .formActions button {
+        width: 100%;
+    }
+
+    .uploadGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .portfolioGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .descriptionSection button {
+        width: 100%;
+    }
+}
