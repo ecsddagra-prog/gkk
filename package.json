@@ -4,7 +4,7 @@
   "description": "Multi-service Home & Lifestyle Platform",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -20,7 +20,7 @@
     "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.263.1",
-    "next": "^14.0.0",
+    "next": "14.2.16",
     "pg": "^8.16.3",
     "razorpay": "^2.9.2",
     "react": "^18.2.0",
@@ -36,7 +36,7 @@
     "autoprefixer": "^10.4.16",
     "dotenv": "^17.2.3",
     "eslint": "^8.54.0",
-    "eslint-config-next": "^14.0.0",
+    "eslint-config-next": "14.2.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.2"

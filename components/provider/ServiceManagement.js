@@ -3,7 +3,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
 import { Wrench, DollarSign, CheckCircle2, XCircle } from 'lucide-react'
-import { Button, Card, Badge, Modal, ModalFooter, FormInput, FormSelect, LoadingSkeleton } from '../shared'
+import { Button, Card, Badge, Modal, ModalFooter, FormInput, FormSelect, LoadingSkeleton, UnitSelector } from '../shared'
 import styles from '../../styles/ServiceManagement.module.css'
 
 export default function ServiceManagement() {
@@ -56,7 +56,8 @@ export default function ServiceManagement() {
 
             const sub_service_rates = service.subservices?.map(sub => ({
                 sub_service_id: sub.id,
-                rate: sub.provider_rate || sub.base_charge
+                rate: sub.provider_rate || sub.base_charge,
+                pricing_unit: sub.pricing_unit || 'job'
             })) || []
 
             await axios.put('/api/provider/services', {
@@ -65,10 +66,17 @@ export default function ServiceManagement() {
                 base_price: service.provider_price,
                 inspection_fee: service.inspection_fee,
                 emergency_fee: service.emergency_fee,
+                pricing_unit: service.pricing_unit || 'job',
                 sub_service_rates
             }, {
                 headers: { Authorization: `Bearer ${session?.access_token}` }
             })
+            // Update individual service unit if changed locally (though currently handled via sub_service_rates for sub services)
+            // Ideally we should send the service unit too.
+            // Let's assume the API will be updated to accept `pricing_unit` for the main service as well.
+            // For now, I will add pricing_unit to the body above in a separate step or modify the object passed.
+            // But wait, I need to send pricing_unit in the PUT request.
+            // Correcting the PUT request payload in the next chunk.
             toast.success('Service updated successfully')
         } catch (error) {
             console.error('Error updating service:', error)
@@ -82,13 +90,18 @@ export default function ServiceManagement() {
         ))
     }
 
-    const handleSubServiceChange = (serviceId, subServiceId, value) => {
+    const handleSubServiceChange = (serviceId, subServiceId, field, value) => {
         setServices(services.map(s => {
             if (s.id === serviceId) {
                 return {
                     ...s,
                     subservices: s.subservices.map(sub =>
-                        sub.id === subServiceId ? { ...sub, provider_rate: value } : sub
+                        sub.id === subServiceId
+                            ? {
+                                ...sub,
+                                [field === 'rate' ? 'provider_rate' : 'pricing_unit']: field === 'rate' ? value : value
+                            }
+                            : sub
                     )
                 }
             }
@@ -205,9 +218,14 @@ export default function ServiceManagement() {
                                                 type="number"
                                                 value={service.provider_price || ''}
                                                 onChange={(e) => handleChange(service.id, 'provider_price', parseFloat(e.target.value))}
-                                                className="input"
                                                 disabled={!service.is_enabled}
                                                 placeholder="0"
+                                            />
+                                            <UnitSelector
+                                                value={service.pricing_unit || 'job'}
+                                                onChange={() => { }}
+                                                disabled={true}
+                                                className="ml-auto"
                                             />
                                         </div>
                                     </div>
@@ -219,10 +237,10 @@ export default function ServiceManagement() {
                                                 type="number"
                                                 value={service.inspection_fee || ''}
                                                 onChange={(e) => handleChange(service.id, 'inspection_fee', parseFloat(e.target.value))}
-                                                className="input"
                                                 disabled={!service.is_enabled}
                                                 placeholder="0"
                                             />
+                                            <span className="text-sm text-gray-500">Per Visit</span>
                                         </div>
                                     </div>
                                     <div className={styles.priceInput}>
@@ -233,10 +251,10 @@ export default function ServiceManagement() {
                                                 type="number"
                                                 value={service.emergency_fee || ''}
                                                 onChange={(e) => handleChange(service.id, 'emergency_fee', parseFloat(e.target.value))}
-                                                className="input"
                                                 disabled={!service.is_enabled}
                                                 placeholder="0"
                                             />
+                                            <span className="text-sm text-gray-500">Extra</span>
                                         </div>
                                     </div>
                                 </div>
@@ -250,16 +268,22 @@ export default function ServiceManagement() {
                                                 <div key={sub.id} className={styles.subServiceItem}>
                                                     <span className={styles.subServiceName}>• {sub.name}</span>
                                                     <div className={styles.subServiceRate}>
-                                                        <span className={styles.currency}>₹</span>
-                                                        <input
-                                                            type="number"
-                                                            value={sub.provider_rate !== null ? sub.provider_rate : ''}
-                                                            onChange={(e) => handleSubServiceChange(service.id, sub.id, e.target.value)}
-                                                            placeholder="Rate"
-                                                            className="input"
-                                                            disabled={!service.is_enabled}
-                                                        />
-                                                        {sub.pricing_type === 'hourly' && <span className="text-gray-400">/hr</span>}
+                                                        <div className={styles.priceInputField}>
+                                                            <span className={styles.currency}>₹</span>
+                                                            <input
+                                                                type="number"
+                                                                value={sub.provider_rate !== null ? sub.provider_rate : ''}
+                                                                onChange={(e) => handleSubServiceChange(service.id, sub.id, 'rate', e.target.value)}
+                                                                placeholder="0"
+                                                                disabled={!service.is_enabled}
+                                                            />
+                                                            <UnitSelector
+                                                                value={sub.pricing_unit || 'job'}
+                                                                onChange={() => { }}
+                                                                disabled={true}
+                                                                className="ml-auto"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -273,7 +297,7 @@ export default function ServiceManagement() {
                                     variant="primary"
                                     size="sm"
                                     onClick={() => handleUpdate(service)}
-                                    disabled={!service.is_enabled}
+                                    // disabled={!service.is_enabled} // Fixed: Allow saving even if disabled
                                     style={{ width: '100%' }}
                                 >
                                     Save Changes

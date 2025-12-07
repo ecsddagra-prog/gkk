@@ -5,6 +5,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import ImageUpload from '../../components/ImageUpload'
+import { UnitSelector } from '../../components/shared'
 
 export default function AdminServices({ user }) {
   const router = useRouter()
@@ -29,6 +30,7 @@ export default function AdminServices({ user }) {
     min_radius_km: 5,
     max_radius_km: 50,
     is_active: true,
+    pricing_unit: 'job',
     image_url: '',
     new_category_name: '',
     new_category_image: '',
@@ -123,6 +125,7 @@ export default function AdminServices({ user }) {
         min_radius_km: 5,
         max_radius_km: 50,
         is_active: true,
+        pricing_unit: 'job',
         image_url: '',
         new_category_name: '',
         new_category_image: '',
@@ -171,6 +174,7 @@ export default function AdminServices({ user }) {
       min_radius_km: service.min_radius_km || 5,
       max_radius_km: service.max_radius_km || 50,
       is_active: service.is_active !== undefined ? service.is_active : true,
+      pricing_unit: service.pricing_unit || 'job',
       image_url: service.image_url || '',
       new_category_name: '',
       new_category_image: '',
@@ -374,7 +378,7 @@ export default function AdminServices({ user }) {
                 setFormData({
                   id: null, category_id: '', name: '', description: '', base_price: '',
                   min_price: '', max_price: '', is_fixed_location: false, min_radius_km: 5,
-                  max_radius_km: 50, is_active: true, image_url: '', new_category_name: '',
+                  max_radius_km: 50, is_active: true, pricing_unit: 'job', image_url: '', new_category_name: '',
                   new_category_image: '', sub_services: []
                 })
                 setShowModal(true)
@@ -431,6 +435,7 @@ export default function AdminServices({ user }) {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Name</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Base Price</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price Range</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -454,6 +459,7 @@ export default function AdminServices({ user }) {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{service.description || '-'}</td>
                               <td className="px-6 py-4 text-sm text-gray-900 font-semibold">{service.base_price ? `₹${service.base_price}` : '-'}</td>
+                              <td className="px-6 py-4 text-sm text-gray-500 capitalize">{service.pricing_unit}</td>
                               <td className="px-6 py-4 text-sm text-gray-500">{service.min_price && service.max_price ? `₹${service.min_price} - ₹${service.max_price}` : '-'}</td>
                               <td className="px-6 py-4 text-sm">
                                 <span className={`px-2 py-1 text-xs rounded-full ${service.is_fixed_location ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
@@ -583,7 +589,10 @@ export default function AdminServices({ user }) {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Base Price (₹)</label>
-                  <input type="number" value={formData.base_price} onChange={(e) => setFormData({ ...formData, base_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
+                  <div className="flex gap-2">
+                    <input type="number" value={formData.base_price} onChange={(e) => setFormData({ ...formData, base_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
+                    <UnitSelector value={formData.pricing_unit} onChange={(val) => setFormData({ ...formData, pricing_unit: val })} className="w-[140px]" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Min Price (₹)</label>
@@ -658,6 +667,16 @@ export default function AdminServices({ user }) {
                           }}
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
                         />
+                        <div className="md:col-span-2 flex gap-4 items-center">
+                          <div className="flex gap-2 items-center flex-1">
+                            <label className="text-xs text-gray-500">Unit:</label>
+                            <UnitSelector value={sub.pricing_unit || 'job'} onChange={(val) => {
+                              const newSubs = [...formData.sub_services]
+                              newSubs[index].pricing_unit = val
+                              setFormData({ ...formData, sub_services: newSubs })
+                            }} className="w-[140px]" />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between mb-3">

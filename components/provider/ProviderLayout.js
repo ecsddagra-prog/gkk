@@ -52,6 +52,7 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
         { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'bookings', label: 'My Bookings', icon: Calendar, link: '/provider/bookings' },
+        { id: 'subscribers', label: 'My Subscribers', icon: Users, link: '/provider/subscribers' },
         { id: 'services', label: 'Service Management', icon: Wrench },
         { id: 'location-management', label: 'Location Management', icon: MapPin },
         { id: 'pricing', label: 'Service Charges', icon: DollarSign },

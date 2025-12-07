@@ -1,4 +1,3 @@
-```
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
@@ -29,22 +28,26 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function runSql() {
-  const sqlPath = path.join(__dirname, 'create_history_table.sql');
+  const sqlFile = process.argv[2];
+  if (!sqlFile) {
+    console.error('Please provide a SQL file path');
+    process.exit(1);
+  }
+
+  const sqlPath = path.join(__dirname, sqlFile);
+  if (!fs.existsSync(sqlPath)) {
+    console.error('SQL file not found:', sqlPath);
+    process.exit(1);
+  }
+
   const sql = fs.readFileSync(sqlPath, 'utf8');
 
   try {
-    // Try to get connection string from env
     let connectionString = process.env.DATABASE_URL;
-    
-    // If not found, try to construct it (this is a guess, but often works for Supabase)
-    // postgres://postgres:[password]@db.[ref].supabase.co:5432/postgres
-    // We don't have password easily available usually.
-    
+
     if (!connectionString) {
-        console.error('DATABASE_URL not found in .env.local');
-        // Fallback: try to use supabase-js to insert a dummy row to a non-existent table to see if we can trigger error or something?
-        // No, we need to create table.
-        return;
+      console.error('DATABASE_URL not found in .env.local');
+      return;
     }
 
     const client = new Client({
@@ -53,14 +56,17 @@ async function runSql() {
     });
 
     await client.connect();
+    // Split by semicolons and run loosely if needed, or just run the whole block?
+    // pg client can usually handle multiple statements if they are simple.
+    // However, some PL/pgSQL blocks might cause issues if split incorrectly.
+    // Let's try running it as one block first.
     await client.query(sql);
     await client.end();
     console.log('SQL executed successfully');
-    
+
   } catch (e) {
-      console.error('Error executing SQL:', e);
+    console.error('Error executing SQL:', e);
   }
 }
 
 runSql();
-```

@@ -8,6 +8,7 @@ import { Calendar, MapPin, User, DollarSign, Clock } from 'lucide-react'
 import { Button, Card, Badge, StatusBadge, Modal, ModalFooter, FormInput, FormTextarea, LoadingSkeleton } from '../../components/shared'
 import { formatCurrency, formatDate, getStatusLabel, getStatusColor } from '../../lib/utils'
 import styles from '../../styles/Bookings.module.css'
+import LocationPicker from '../../components/ui/LocationPicker'
 
 function ProviderBookingsContent() {
   const router = useRouter()
@@ -25,6 +26,10 @@ function ProviderBookingsContent() {
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [completionData, setCompletionData] = useState({ amount: '', paymentMethod: 'cash' })
+
+  // Map View State
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [viewingLocation, setViewingLocation] = useState(null)
 
   useEffect(() => {
     // Get user from auth
@@ -294,6 +299,22 @@ function ProviderBookingsContent() {
                         <div className={styles.detailItem}>
                           <MapPin size={16} className="text-gray-400" />
                           <span className={styles.detailValue}>{booking.service_address?.substring(0, 40)}...</span>
+                          {booking.service_lat && booking.service_lng && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setViewingLocation({
+                                  lat: booking.service_lat,
+                                  lng: booking.service_lng,
+                                  address: booking.service_address
+                                })
+                                setShowMapModal(true)
+                              }}
+                              className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-200 transition-colors"
+                            >
+                              View on Map
+                            </button>
+                          )}
                         </div>
                         <div className={styles.detailItem}>
                           <DollarSign size={16} className="text-emerald-600" />
@@ -591,7 +612,56 @@ function ProviderBookingsContent() {
           </ModalFooter>
         </form>
       </Modal>
-    </div>
+
+
+      {/* Map View Modal */}
+      {
+        showMapModal && viewingLocation && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-lg p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative shadow-2xl">
+              <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-blue-600" size={20} />
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Booking Location</h3>
+                    <p className="text-xs text-gray-500 max-w-md truncate">{viewingLocation.address}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowMapModal(false)}
+                  className="bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-0 flex-1 relative bg-gray-100 min-h-[400px]">
+                <LocationPicker
+                  value={viewingLocation}
+                  center={[viewingLocation.lat, viewingLocation.lng]}
+                  zoom={16}
+                  readOnly={true}
+                />
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${viewingLocation.lat},${viewingLocation.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[500] bg-white text-blue-600 px-6 py-2 rounded-full font-medium shadow-lg hover:bg-blue-50 flex items-center gap-2 border border-blue-100"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Navigate (Google Maps)
+                </a>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   )
 }
 

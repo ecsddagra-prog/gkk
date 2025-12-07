@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { MapPin as MapPinIcon } from 'lucide-react'
+import LocationPicker from '../components/ui/LocationPicker'
 
 export default function Addresses({ user }) {
   const router = useRouter()
@@ -24,6 +26,10 @@ export default function Addresses({ user }) {
   })
   const [locating, setLocating] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Map Modal State
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [mapCoordinates, setMapCoordinates] = useState({ lat: 20.5937, lng: 78.9629 }) // Default: India Center
 
   useEffect(() => {
     if (!user) {
@@ -139,6 +145,10 @@ export default function Addresses({ user }) {
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
         const { latitude, longitude } = position.coords
+
+        // Update map coordinates if map is open
+        setMapCoordinates({ lat: latitude, lng: longitude })
+
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
         const data = await response.json()
         const address = data.address || {}
@@ -165,6 +175,30 @@ export default function Addresses({ user }) {
       toast.error('Unable to fetch your location')
       setLocating(false)
     }, { enableHighAccuracy: true })
+  }
+
+  const openMapPicker = () => {
+    // If we already have lat/long, use it
+    if (formData.latitude && formData.longitude) {
+      setMapCoordinates({
+        lat: Number(formData.latitude),
+        lng: Number(formData.longitude)
+      })
+    } else {
+      // Try to geocode current address fields if available, otherwise default
+      // For now just defaulting or keeping previous
+    }
+    setShowMapModal(true)
+  }
+
+  const handleMapConfirm = () => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: mapCoordinates.lat,
+      longitude: mapCoordinates.lng
+    }))
+    setShowMapModal(false)
+    toast.success('Location coordinates updated!')
   }
 
   if (loading) {
@@ -296,6 +330,37 @@ export default function Addresses({ user }) {
                     </>
                   )}
                 </button>
+
+              </div>
+
+              {/* Map Preview / Button */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-blue-900">Pin Location on Map</label>
+                  {formData.latitude && formData.longitude && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                      Location Set ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-blue-700 mb-3">
+                  Set the exact location for better service delivery.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={openMapPicker}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    <MapPinIcon className="w-4 h-4" />
+                    {formData.latitude && formData.longitude ? 'Adjust Location on Map' : 'Set Location on Map'}
+                  </button>
+                </div>
+                {formData.latitude && formData.longitude && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Lat: {Number(formData.latitude).toFixed(4)}, Lng: {Number(formData.longitude).toFixed(4)}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -381,9 +446,55 @@ export default function Addresses({ user }) {
               </div>
             </form>
           </div>
-        </div>
-      )}
-    </div>
+        </div >
+      )
+      }
+
+      {/* Map Picker Modal */}
+      {
+        showMapModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-lg p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative">
+              <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Set Precise Location</h3>
+                  <p className="text-sm text-gray-500">Drag the map to position the pin exactly at your location</p>
+                </div>
+                <button
+                  onClick={() => setShowMapModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-0 flex-1 relative bg-gray-100 min-h-[400px]">
+                <LocationPicker
+                  value={mapCoordinates}
+                  onChange={setMapCoordinates}
+                  center={[mapCoordinates.lat, mapCoordinates.lng]}
+                  zoom={15}
+                />
+
+                {/* Floating Confirm Button */}
+                <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center z-[500]">
+                  <button
+                    type="button"
+                    onClick={handleMapConfirm}
+                    className="bg-black text-white px-8 py-3 rounded-full font-medium shadow-xl hover:bg-gray-800 transform hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    <MapPinIcon className="w-5 h-5 text-red-500" />
+                    Confirm Location
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   )
 }
 

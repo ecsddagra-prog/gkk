@@ -1,9 +1,9 @@
+@import './design-system.css';
+
+/* Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Design System */
-@import './design-system.module.css';
 
 * {
   box-sizing: border-box;
