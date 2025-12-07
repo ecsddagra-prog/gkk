@@ -1,0 +1,173 @@
+/* Payment Settings Styles */
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-5) 0;
+}
+
+/* Payment Method Selection */
+.methodGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-4);
+}
+
+.methodCard {
+    padding: var(--space-5);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.methodCard:hover {
+    border-color: var(--color-primary-300);
+    background: var(--color-primary-50);
+}
+
+.methodCard.active {
+    border-color: var(--color-primary-600);
+    background: var(--color-primary-50);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.methodIcon {
+    font-size: 2rem;
+    margin-bottom: var(--space-1);
+}
+
+.methodLabel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    text-align: center;
+}
+
+/* Form Grid */
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+/* UPI Section */
+.upiSection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+}
+
+.upiForm {
+    display: flex;
+    flex-direction: column;
+}
+
+.qrSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.qrLabel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.qrUpload {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.uploadButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    width: fit-content;
+}
+
+.uploadButton:hover {
+    background: var(--color-background-secondary);
+    border-color: var(--color-primary-300);
+}
+
+.fileInput {
+    display: none;
+}
+
+.qrPreview {
+    margin-top: var(--space-2);
+}
+
+.qrImage {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
+    background: white;
+}
+
+/* Form Actions */
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-4);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--space-4);
+    }
+
+    .methodGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .upiSection {
+        grid-template-columns: 1fr;
+    }
+
+    .formActions {
+        justify-content: stretch;
+    }
+
+    .formActions button {
+        width: 100%;
+    }
+}

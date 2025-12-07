@@ -55,6 +55,7 @@ export default async function handler(req, res) {
         max_radius_km,
         is_active,
         image_url,
+        pricing_unit,
         sub_services // Array of { name, base_charge, image_url, sub_subservices }
       } = req.body
 
@@ -95,7 +96,8 @@ export default async function handler(req, res) {
           min_radius_km: min_radius_km || 5.0,
           max_radius_km: max_radius_km || 50.0,
           is_active: is_active !== undefined ? is_active : true,
-          image_url: image_url || null
+          image_url: image_url || null,
+          pricing_unit: pricing_unit || 'job'
         })
         .select('*, category:service_categories(*)')
         .single()
@@ -113,7 +115,8 @@ export default async function handler(req, res) {
               name: sub.name,
               base_charge: sub.base_charge || 0,
               image_url: sub.image_url || null,
-              is_active: true
+              is_active: true,
+              pricing_unit: sub.pricing_unit || 'job'
             })
             .select()
             .single()

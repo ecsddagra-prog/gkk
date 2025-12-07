@@ -35,13 +35,13 @@ export default async function handler(req, res) {
             // Fetch provider's custom rates for sub-services
             const { data: providerRates, error: ratesError } = await supabaseAdmin
                 .from('provider_service_rates')
-                .select('sub_service_id, rate')
+                .select('sub_service_id, rate, pricing_unit')
                 .eq('provider_id', provider.id)
 
             if (ratesError) throw ratesError
 
             const ratesMap = (providerRates || []).reduce((acc, curr) => {
-                acc[curr.sub_service_id] = curr.rate
+                acc[curr.sub_service_id] = { rate: curr.rate, unit: curr.pricing_unit }
                 return acc
             }, {})
 
@@ -54,6 +54,7 @@ export default async function handler(req, res) {
                     provider_price: ps?.base_price || service.base_price,
                     inspection_fee: ps?.inspection_fee || 0,
                     emergency_fee: ps?.emergency_fee || 0,
+                    pricing_unit: service.pricing_unit || 'job',
                     ps_id: ps?.id
                 }
             })
@@ -76,7 +77,10 @@ export default async function handler(req, res) {
                     .filter(sub => sub.service_id === service.id)
                     .map(sub => ({
                         ...sub,
-                        provider_rate: ratesMap[sub.id] || null // Add provider's custom rate
+                        ...sub,
+                        provider_rate: ratesMap[sub.id]?.rate || null,
+                        provider_rate: ratesMap[sub.id]?.rate || null,
+                        pricing_unit: sub.pricing_unit || 'job'
                     }))
             }))
 
@@ -84,7 +88,7 @@ export default async function handler(req, res) {
         }
 
         if (req.method === 'PUT') {
-            const { service_id, is_enabled, base_price, inspection_fee, emergency_fee, sub_service_rates } = req.body
+            const { service_id, is_enabled, base_price, inspection_fee, emergency_fee, pricing_unit, sub_service_rates } = req.body
 
             if (!service_id) {
                 return res.status(400).json({ error: 'Service ID is required' })
@@ -106,7 +110,8 @@ export default async function handler(req, res) {
                         is_active: is_enabled,
                         base_price,
                         inspection_fee,
-                        emergency_fee
+                        emergency_fee,
+                        pricing_unit
                     })
                     .eq('id', existing.id)
 
@@ -121,7 +126,8 @@ export default async function handler(req, res) {
                         is_active: is_enabled,
                         base_price,
                         inspection_fee,
-                        emergency_fee
+                        emergency_fee,
+                        pricing_unit
                     })
 
                 if (error) throw error
@@ -129,10 +135,11 @@ export default async function handler(req, res) {
 
             // Handle sub-service rates if provided
             if (sub_service_rates && Array.isArray(sub_service_rates)) {
-                const upsertData = sub_service_rates.map(({ sub_service_id, rate }) => ({
+                const upsertData = sub_service_rates.map(({ sub_service_id, rate, pricing_unit }) => ({
                     provider_id: provider.id,
                     sub_service_id,
-                    rate: Number(rate)
+                    rate: Number(rate),
+                    pricing_unit: pricing_unit || 'job'
                 }))
 
                 if (upsertData.length > 0) {

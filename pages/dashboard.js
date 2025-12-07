@@ -2,9 +2,20 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '../lib/supabase'
-import axios from 'axios'
 import toast from 'react-hot-toast'
 import { formatCurrency, formatDate } from '../lib/utils'
+import {
+  Wallet,
+  Gift,
+  Award,
+  Calendar,
+  List,
+  MapPin,
+  ArrowRight,
+  Package,
+  LogOut
+} from 'lucide-react'
+import styles from '../styles/UserDashboard.module.css'
 
 export default function Dashboard({ user }) {
   const router = useRouter()
@@ -126,158 +137,203 @@ export default function Dashboard({ user }) {
     window.location.reload()
   }
 
+  const getStatusClass = (status) => {
+    const statusMap = {
+      'completed': styles.statusCompleted,
+      'pending': styles.statusPending,
+      'in_progress': styles.statusInProgress,
+      'cancelled': styles.statusCancelled,
+      'confirmed': styles.statusPending,
+      'assigned': styles.statusInProgress,
+    }
+    return statusMap[status] || styles.statusPending
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className={styles.emptyStateIcon}>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={styles.container}>
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-blue-600">Home Solution</h1>
-            <div className="flex gap-4 items-center">
-              <Link href="/book-service" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Book Service
-              </Link>
-              <button onClick={handleLogout} className="px-4 py-2 text-gray-700 hover:text-red-600">
-                Logout
-              </button>
-            </div>
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <h1 className={styles.logo}>Home Solution</h1>
+          <div className={styles.headerActions}>
+            <Link href="/book-service" className={styles.btnPrimary}>
+              <Calendar size={18} />
+              Book Service
+            </Link>
+            <button onClick={handleLogout} className={styles.btnLogout}>
+              <LogOut size={18} />
+              Logout
+            </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Card */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-4">Welcome, {profile?.full_name || 'User'}!</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Link href="/wallet" className="bg-blue-50 p-4 rounded-lg hover:bg-blue-100 transition cursor-pointer">
-              <div className="text-sm text-gray-600">Wallet Balance</div>
-              <div className="text-2xl font-bold text-blue-600">
+      <div className={styles.mainContent}>
+        {/* Welcome Section */}
+        <section className={styles.welcomeSection}>
+          <div className={styles.welcomeHeader}>
+            <h2 className={styles.welcomeTitle}>
+              Welcome back, {profile?.full_name || 'User'}! 👋
+            </h2>
+            <p className={styles.welcomeSubtitle}>
+              Manage your bookings, wallet & services easily
+            </p>
+          </div>
+
+          {/* Wallet Information - 3 Highlight Cards */}
+          <div className={styles.highlightCardsGrid}>
+            <Link href="/wallet" className={styles.highlightCard}>
+              <div className={`${styles.cardIconWrapper} ${styles.iconWallet}`}>
+                <Wallet size={24} color="white" />
+              </div>
+              <div className={styles.cardLabel}>Wallet Balance</div>
+              <div className={styles.cardValue}>
                 {formatCurrency(profile?.wallet_balance || 0)}
               </div>
             </Link>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Total Cashback</div>
-              <div className="text-2xl font-bold text-green-600">
+
+            <div className={styles.highlightCard} style={{ cursor: 'default' }}>
+              <div className={`${styles.cardIconWrapper} ${styles.iconGift}`}>
+                <Gift size={24} color="white" />
+              </div>
+              <div className={styles.cardLabel}>Total Cashback</div>
+              <div className={styles.cardValueGreen}>
                 {formatCurrency(profile?.total_cashback || 0)}
               </div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Reward Points</div>
-              <div className="text-2xl font-bold text-purple-600">
+
+            <div className={styles.highlightCard} style={{ cursor: 'default' }}>
+              <div className={`${styles.cardIconWrapper} ${styles.iconAward}`}>
+                <Award size={24} color="white" />
+              </div>
+              <div className={styles.cardLabel}>Reward Points</div>
+              <div className={styles.cardValueGold}>
                 {profile?.total_rewards || 0} pts
               </div>
             </div>
           </div>
-          <div className="flex gap-4">
-            <Link href="/profile" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-              My Profile
-            </Link>
-            <Link href="/addresses" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-              My Addresses
-            </Link>
-            <Link href="/bookings" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-              All Bookings
-            </Link>
-            {profile?.role === 'admin' || profile?.role === 'superadmin' ? (
-              <Link href="/admin/dashboard" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Admin Dashboard
-              </Link>
-            ) : null}
-            {profile?.role === 'provider' ? (
-              <Link href="/provider/dashboard" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                Provider Dashboard
-              </Link>
-            ) : profile?.role === 'user' ? (
-              <Link href="/provider/register" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                Become a Provider
-              </Link>
-            ) : null}
-          </div>
-        </div>
+        </section>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Link href="/book-service" className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center">
-            <div className="text-2xl mb-2">➕</div>
-            <div className="font-semibold text-sm">Book Service</div>
-          </Link>
-          <Link href="/bookings" className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center">
-            <div className="text-2xl mb-2">📋</div>
-            <div className="font-semibold text-sm">All Bookings</div>
-          </Link>
-          <Link href="/wallet" className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center">
-            <div className="text-2xl mb-2">💰</div>
-            <div className="font-semibold text-sm">Wallet</div>
-          </Link>
-          <Link href="/addresses" className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center">
-            <div className="text-2xl mb-2">📍</div>
-            <div className="font-semibold text-sm">Addresses</div>
-          </Link>
-        </div>
+        {/* Quick Navigation */}
+        <section className={styles.quickNavSection}>
+          <h3 className={styles.sectionTitle}>Quick Actions</h3>
+          <div className={styles.quickNavGrid}>
+            <Link href="/book-service" className={styles.quickNavCard}>
+              <div className={`${styles.quickNavIcon} ${styles.iconBook}`}>
+                <Calendar size={28} color="white" />
+              </div>
+              <span className={styles.quickNavLabel}>Book Service</span>
+            </Link>
 
-        {/* Bookings */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Recent Bookings</h2>
-            <Link href="/bookings" className="text-blue-600 hover:text-blue-700 text-sm">
-              View All →
+            <Link href="/bookings" className={styles.quickNavCard}>
+              <div className={`${styles.quickNavIcon} ${styles.iconList}`}>
+                <List size={28} color="white" />
+              </div>
+              <span className={styles.quickNavLabel}>All Bookings</span>
+            </Link>
+
+            <Link href="/wallet" className={styles.quickNavCard}>
+              <div className={`${styles.quickNavIcon} ${styles.iconWalletNav}`}>
+                <Wallet size={28} color="white" />
+              </div>
+              <span className={styles.quickNavLabel}>Wallet</span>
+            </Link>
+
+            <Link href="/addresses" className={styles.quickNavCard}>
+              <div className={`${styles.quickNavIcon} ${styles.iconMap}`}>
+                <MapPin size={28} color="white" />
+              </div>
+              <span className={styles.quickNavLabel}>Addresses</span>
             </Link>
           </div>
-          {bookings.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">No bookings yet</p>
-              <Link href="/book-service" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block">
-                Book your first service
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {bookings.map(booking => (
-                <div key={booking.id} className="border rounded-lg p-4 hover:shadow-md transition">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{booking.service?.name}</h3>
-                      <p className="text-sm text-gray-600">Booking #: {booking.booking_number}</p>
-                      <p className="text-sm text-gray-600">
-                        Date: {formatDate(booking.scheduled_date || booking.created_at)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Status: <span className="capitalize">{booking.status.replace('_', ' ')}</span>
-                      </p>
-                      {booking.provider && (
-                        <p className="text-sm text-gray-600">
-                          Provider: {booking.provider.user?.full_name || booking.provider.business_name || 'Not assigned'}
-                        </p>
-                      )}
-                      {booking.final_price && (
-                        <p className="text-sm font-semibold text-green-600 mt-1">
-                          Amount: {formatCurrency(booking.final_price)}
-                        </p>
-                      )}
+        </section>
+
+        {/* Recent Bookings */}
+        <section className={styles.bookingsSection}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Recent Bookings</h3>
+            <Link href="/bookings" className={styles.viewAllLink}>
+              View All
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className={styles.bookingsContainer}>
+            {bookings.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyStateIcon}>
+                  <Package size={40} color="white" />
+                </div>
+                <h4 className={styles.emptyStateTitle}>No bookings yet</h4>
+                <p className={styles.emptyStateText}>
+                  Start your journey by booking your first service
+                </p>
+                <Link href="/book-service" className={styles.btnPrimary}>
+                  <Calendar size={18} />
+                  Book your first service
+                </Link>
+              </div>
+            ) : (
+              <div className={styles.bookingsList}>
+                {bookings.map(booking => (
+                  <div key={booking.id} className={styles.bookingCard}>
+                    <div className={styles.bookingIcon}>
+                      <Package size={24} color="white" />
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Link
-                        href={`/booking/${booking.id}`}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap"
-                      >
+
+                    <div className={styles.bookingDetails}>
+                      <h4 className={styles.bookingTitle}>
+                        {booking.service?.name || 'Service'}
+                      </h4>
+                      <div className={styles.bookingMeta}>
+                        <div>Booking #: {booking.booking_number}</div>
+                        <div>Date: {formatDate(booking.scheduled_date || booking.created_at)}</div>
+                        {booking.provider && (
+                          <div>
+                            Provider: {booking.provider.user?.full_name || booking.provider.business_name || 'Not assigned'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={styles.bookingActions}>
+                      <span className={`${styles.statusChip} ${getStatusClass(booking.status)}`}>
+                        {booking.status.replace('_', ' ')}
+                      </span>
+                      {booking.final_price && (
+                        <span className={styles.bookingAmount}>
+                          {formatCurrency(booking.final_price)}
+                        </span>
+                      )}
+                      <Link href={`/booking/${booking.id}`} className={styles.btnPill}>
                         View Details
+                        <ArrowRight size={14} />
                       </Link>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Mobile Sticky Book Button */}
+      <div className={styles.stickyBookButton}>
+        <Link href="/book-service" className={styles.btnPrimary}>
+          <Calendar size={20} />
+          Book Now
+        </Link>
       </div>
     </div>
   )

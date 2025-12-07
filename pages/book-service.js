@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { MapPin as MapPinIcon } from 'lucide-react'
+import LocationPicker from '../components/ui/LocationPicker'
 
 export default function BookService({ user }) {
   const router = useRouter()
@@ -38,6 +40,10 @@ export default function BookService({ user }) {
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [providerCount, setProviderCount] = useState({ count: 0, enabled: false })
   const [showQuoteField, setShowQuoteField] = useState(false)
+
+  // Map Modal State
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [mapCoordinates, setMapCoordinates] = useState({ lat: 20.5937, lng: 78.9629 }) // Default: India Center
 
   useEffect(() => {
     if (!user) {
@@ -175,6 +181,27 @@ export default function BookService({ user }) {
     if (matchingCity && matchingCity.id !== selectedCity) {
       setSelectedCity(matchingCity.id)
     }
+  }
+
+  const openMapPicker = () => {
+    // If we already have lat/long, use it
+    if (formData.service_lat && formData.service_lng) {
+      setMapCoordinates({
+        lat: Number(formData.service_lat),
+        lng: Number(formData.service_lng)
+      })
+    }
+    setShowMapModal(true)
+  }
+
+  const handleMapConfirm = () => {
+    setFormData(prev => ({
+      ...prev,
+      service_lat: mapCoordinates.lat,
+      service_lng: mapCoordinates.lng
+    }))
+    setShowMapModal(false)
+    toast.success('Location coordinates updated!')
   }
 
   const autoDetectCityFromLocation = useCallback(() => {
@@ -447,41 +474,41 @@ export default function BookService({ user }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+      <header className="bg-white shadow-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Back to Dashboard
+            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-blue-600">Book a Service</h1>
-            <div></div>
+            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">Book a Service</h1>
+            <div className="w-32"></div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl p-8 space-y-8 border border-gray-100">
           {/* City Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select City *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-3">Select City *</label>
             <select
               required
               value={selectedCity || ''}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full min-h-[48px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 bg-white"
             >
               <option value="">Select City</option>
               {cities.map(city => (
                 <option key={city.id} value={city.id}>{city.name}</option>
               ))}
             </select>
-
           </div>
 
           {/* Category Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Service Category *</label>
+            <label className="block text-sm font-semibold text-gray-800 mb-3">Service Category *</label>
             <select
               required
               value={selectedCategory || ''}
@@ -492,7 +519,7 @@ export default function BookService({ user }) {
                 setSelectedSubSubServiceIds([])
                 setServices([])
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full min-h-[48px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 bg-white"
             >
               <option value="">Select Category</option>
               {categories.map(cat => (
@@ -505,7 +532,7 @@ export default function BookService({ user }) {
             {selectedCategory && (() => {
               const cat = categories.find(c => c.id === selectedCategory)
               if (cat?.image_url) {
-                return <img src={cat.image_url} alt={cat.name} className="mt-2 h-16 w-16 object-cover rounded-lg" />
+                return <img src={cat.image_url} alt={cat.name} className="mt-3 h-16 w-16 object-cover rounded-xl shadow-sm" />
               }
               return null
             })()}
@@ -514,7 +541,7 @@ export default function BookService({ user }) {
           {/* Service Selection */}
           {selectedCategory && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Service *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-3">Select Service *</label>
 
               {!selectedCity ? (
                 <div className="w-full px-3 py-8 border border-gray-300 rounded-lg bg-blue-50 text-center">
@@ -541,9 +568,9 @@ export default function BookService({ user }) {
                       key={service.id}
                       type="button"
                       onClick={() => handleServiceSelect(service)}
-                      className={`p-4 border rounded-lg text-left transition ${selectedServiceId === service.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-300 hover:border-gray-400'
+                      className={`p-5 border-2 rounded-xl text-left transition-all duration-200 ${selectedServiceId === service.id
+                        ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-100'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                         }`}
                     >
                       <div className="font-semibold text-gray-900">{service.name}</div>
@@ -565,7 +592,7 @@ export default function BookService({ user }) {
 
           {/* Provider Count Notification */}
           {selectedServiceId && providerCount.enabled && providerCount.count > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 animate-pulse">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-5 flex items-center gap-4 shadow-sm animate-pulse">
               <span className="text-2xl">👨‍🔧</span>
               <div>
                 <p className="text-green-800 font-medium">
@@ -580,13 +607,13 @@ export default function BookService({ user }) {
 
           {/* Sub-Service Selection */}
           {selectedServiceId && activeService && activeService.sub_services && activeService.sub_services.length > 0 && (
-            <div className="border-t pt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+            <div className="border-t-2 border-gray-100 pt-8">
+              <label className="block text-base font-bold text-gray-900 mb-4">
                 Select Options for {activeService.name} *
               </label>
               <div className="space-y-3">
                 {activeService.sub_services.map(subService => (
-                  <div key={subService.id} className="border rounded-lg p-4">
+                  <div key={subService.id} className="border-2 border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all duration-200">
                     <label className="flex items-start cursor-pointer">
                       <input
                         type="checkbox"
@@ -635,7 +662,7 @@ export default function BookService({ user }) {
 
           {/* Price Summary */}
           {selectedServiceId && (activeSubServices.length > 0 || activeService?.base_price) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-2">Price Summary</h3>
               {activeSubServices.length > 0 ? (
                 <div className="space-y-1 text-sm">
@@ -671,8 +698,8 @@ export default function BookService({ user }) {
           )}
 
           {/* Address Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Service Address *</label>
+          <div className="border-t-2 border-gray-100 pt-8">
+            <label className="block text-base font-bold text-gray-900 mb-4">Service Address *</label>
             {addresses.length > 0 ? (
               <div className="space-y-2 mb-4">
                 {addresses.map(address => (
@@ -680,9 +707,9 @@ export default function BookService({ user }) {
                     key={address.id}
                     type="button"
                     onClick={() => handleAddressSelect(address)}
-                    className={`w-full text-left p-3 border rounded-lg ${selectedAddress === address.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-300 hover:border-gray-400'
+                    className={`w-full text-left p-4 border-2 rounded-xl transition-all duration-200 ${selectedAddress === address.id
+                      ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-100'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                   >
                     <div className="font-medium">{address.address_type}</div>
@@ -699,7 +726,7 @@ export default function BookService({ user }) {
               type="button"
               onClick={autoDetectCityFromLocation}
               disabled={cityAutoDetecting}
-              className="mb-3 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+              className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-semibold disabled:opacity-50 transition-all duration-200 hover:gap-3"
             >
               {cityAutoDetecting ? (
                 <>
@@ -715,51 +742,81 @@ export default function BookService({ user }) {
                 </>
               )}
             </button>
+
+            {/* Map Preview / Button */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 mb-4 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-bold text-blue-900">📍 Pin Location on Map</label>
+                {formData.service_lat && formData.service_lng && (
+                  <span className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm">
+                    ✓ Location Set
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={openMapPicker}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200 font-medium transform hover:scale-[1.02]"
+                >
+                  <MapPinIcon className="w-5 h-5" />
+                  {formData.service_lat && formData.service_lng ? 'Adjust Location on Map' : 'Set Location on Map'}
+                </button>
+              </div>
+              {formData.service_lat && formData.service_lng && (
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                  <p className="text-xs font-mono text-gray-600">
+                    Lat: {Number(formData.service_lat).toFixed(4)}, Lng: {Number(formData.service_lng).toFixed(4)}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <textarea
               required
               value={formData.service_address}
               onChange={(e) => setFormData({ ...formData, service_address: e.target.value })}
               placeholder="House/Flat No., Building Name, Street, Landmark"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3"
-              rows={2}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 mb-4"
+              rows={3}
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">City *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">City *</label>
                 <input
                   type="text"
                   required
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   placeholder="City"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">State</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">State</label>
                 <input
                   type="text"
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   placeholder="State"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Pincode</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">Pincode</label>
                 <input
                   type="text"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   placeholder="Pincode"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 text-sm"
                 />
               </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Booking For *</label>
+          <div className="border-t-2 border-gray-100 pt-8">
+            <label className="block text-base font-bold text-gray-900 mb-4">Booking For *</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -785,7 +842,7 @@ export default function BookService({ user }) {
                   placeholder="Person's Name"
                   value={otherContact.name}
                   onChange={(e) => setOtherContact({ ...otherContact, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200"
                   required
                 />
                 <input
@@ -793,7 +850,7 @@ export default function BookService({ user }) {
                   placeholder="Person's Phone"
                   value={otherContact.phone}
                   onChange={(e) => setOtherContact({ ...otherContact, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200"
                   required
                 />
               </div>
@@ -801,8 +858,8 @@ export default function BookService({ user }) {
           </div>
 
           {/* Scheduled Date & Time */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Scheduled Date & Time (Optional)</label>
+          <div className="border-t-2 border-gray-100 pt-8">
+            <label className="block text-base font-bold text-gray-900 mb-4">⏰ Scheduled Date & Time (Optional)</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <input
@@ -810,7 +867,7 @@ export default function BookService({ user }) {
                   value={formData.scheduled_date}
                   onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full min-h-[48px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200"
                 />
               </div>
               <div>
@@ -818,7 +875,7 @@ export default function BookService({ user }) {
                   value={formData.scheduled_time}
                   onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
                   disabled={!formData.scheduled_date}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full min-h-[48px] px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select time</option>
                   {Array.from({ length: 288 }, (_, i) => {
@@ -847,7 +904,7 @@ export default function BookService({ user }) {
                 Quote Your Own Rate
               </button>
             ) : (
-              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+              <div className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium text-gray-700">Your Preferred Price</label>
                   <button
@@ -870,7 +927,7 @@ export default function BookService({ user }) {
                   value={formData.user_quoted_price}
                   onChange={(e) => setFormData({ ...formData, user_quoted_price: e.target.value })}
                   placeholder="Enter your preferred price"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-gray-300 transition-all duration-200"
                 />
                 <p className="text-xs text-gray-600 mt-2">Provider can accept or counter your offer</p>
               </div>
@@ -881,9 +938,9 @@ export default function BookService({ user }) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-6 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 shadow-lg transition-all"
+            className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            {submitting ? 'Creating Booking...' : 'Create Booking Now'}
+            {submitting ? '⏳ Creating Booking...' : '🚀 Create Booking Now'}
           </button>
 
           {/* Divider */}
@@ -898,15 +955,58 @@ export default function BookService({ user }) {
             type="button"
             disabled={quoteLoading}
             onClick={handleRateQuote}
-            className="w-full px-6 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+            className="w-full px-8 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 hover:shadow-md disabled:opacity-50 transition-all duration-200 transform hover:scale-[1.01]"
           >
-            {quoteLoading ? 'Requesting...' : 'Request Rate Quote'}
+            {quoteLoading ? '⏳ Requesting...' : '💬 Request Rate Quote'}
           </button>
           <p className="text-xs text-gray-500 text-center mt-2">
             Get competitive quotes from multiple providers
           </p>
         </form>
       </div >
+
+      {/* Map Picker Modal */}
+      {showMapModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Set Service Location</h3>
+                <p className="text-sm text-gray-500">Drag to pin exact location for the provider</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMapModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-0 flex-1 relative bg-gray-100 min-h-[400px]">
+              <LocationPicker
+                value={mapCoordinates}
+                onChange={setMapCoordinates}
+                center={[mapCoordinates.lat, mapCoordinates.lng]}
+                zoom={15}
+              />
+
+              <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center z-[500]">
+                <button
+                  type="button"
+                  onClick={handleMapConfirm}
+                  className="bg-black text-white px-8 py-3 rounded-full font-medium shadow-xl hover:bg-gray-800 transform hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  <MapPinIcon className="w-5 h-5 text-red-500" />
+                  Confirm Location
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   )
 }

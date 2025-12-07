@@ -64,12 +64,14 @@ export default async function handler(req, res) {
       // But we should ensure the rating is linked to the correct provider.
     }
 
-    // Check if rating already exists for this party
+    // Check if rating already exists for this party (Global check across all bookings)
     const { data: existingRating } = await supabaseAdmin
       .from('ratings')
       .select('*')
-      .eq('booking_id', booking_id)
+      .eq('user_id', user_id)
+      .eq('provider_id', booking.provider_id)
       .eq('rated_by', rated_by)
+      .limit(1)
       .single()
 
     if (existingRating) {

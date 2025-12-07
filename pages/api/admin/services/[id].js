@@ -33,7 +33,8 @@ export default async function handler(req, res) {
         min_radius_km: serviceUpdates.min_radius_km,
         max_radius_km: serviceUpdates.max_radius_km,
         is_active: serviceUpdates.is_active,
-        image_url: serviceUpdates.image_url
+        image_url: serviceUpdates.image_url,
+        pricing_unit: serviceUpdates.pricing_unit
       }
 
       // Remove undefined values
@@ -76,7 +77,8 @@ export default async function handler(req, res) {
                 name: sub.name,
                 base_charge: sub.base_charge || 0,
                 image_url: sub.image_url || null,
-                is_active: sub.is_active !== undefined ? sub.is_active : true
+                is_active: sub.is_active !== undefined ? sub.is_active : true,
+                pricing_unit: sub.pricing_unit || 'job'
               })
               .eq('id', sub.id)
 
@@ -121,7 +123,8 @@ export default async function handler(req, res) {
                 name: sub.name,
                 base_charge: sub.base_charge || 0,
                 image_url: sub.image_url || null,
-                is_active: sub.is_active !== undefined ? sub.is_active : true
+                is_active: sub.is_active !== undefined ? sub.is_active : true,
+                pricing_unit: sub.pricing_unit || 'job'
               })
               .select()
               .single()

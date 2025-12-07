@@ -2,6 +2,7 @@ import { supabaseAdmin } from '../../../lib/supabase'
 import { requireProviderUser } from '../../../lib/api-auth'
 
 export default async function handler(req, res) {
+    // Trigger rebuild
     try {
         const { provider } = await requireProviderUser(req)
 

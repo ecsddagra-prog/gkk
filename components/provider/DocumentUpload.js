@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import { FileText, Upload, Eye, Trash2, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardBody, Button, FormInput, FormSelect, LoadingSkeleton, Badge, StatusBadge } from '../shared'
 import ImageUpload from '../ImageUpload'
 import ChangeRequestModal from './ChangeRequestModal'
+import styles from '../../styles/DocumentUpload.module.css'
+import { formatDate } from '../../lib/utils'
 
 export default function DocumentUpload() {
     const [loading, setLoading] = useState(true)
@@ -37,7 +41,10 @@ export default function DocumentUpload() {
 
     const handleUpload = async (e) => {
         e.preventDefault()
-        if (!newDoc.document_url) return
+        if (!newDoc.document_url) {
+            toast.error('Please upload a document image')
+            return
+        }
 
         try {
             setUploading(true)
@@ -86,123 +93,148 @@ export default function DocumentUpload() {
         fetchDocuments()
     }
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'verified':
-                return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Verified</span>
-            case 'rejected':
-                return <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
-            default:
-                return <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Pending</span>
-        }
+    if (loading) {
+        return (
+            <div className={styles.container}>
+                <LoadingSkeleton variant="rect" width="100%" height="400px" />
+            </div>
+        )
     }
 
-    if (loading) return <div className="p-4">Loading documents...</div>
-
     return (
-        <div className="space-y-8">
-            <div className="bg-white p-6 rounded-lg shadow space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Upload New Document</h3>
-
-                <form onSubmit={handleUpload} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
-                        <select
-                            value={newDoc.document_type}
-                            onChange={(e) => setNewDoc({ ...newDoc, document_type: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="aadhar">Aadhar Card</option>
-                            <option value="pan">PAN Card</option>
-                            <option value="certificate">Skill Certificate</option>
-                            <option value="license">Trade License</option>
-                            <option value="other">Other</option>
-                        </select>
+        <div className={styles.container}>
+            {/* Upload New Document Card */}
+            <Card>
+                <CardHeader>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <Upload size={20} style={{ color: 'var(--color-primary-600)' }} />
+                        <CardTitle>Upload New Document</CardTitle>
                     </div>
+                </CardHeader>
+                <CardBody>
+                    <form onSubmit={handleUpload} className={styles.uploadForm}>
+                        <div className={styles.formRow}>
+                            <FormSelect
+                                label="Document Type"
+                                value={newDoc.document_type}
+                                onChange={(e) => setNewDoc({ ...newDoc, document_type: e.target.value })}
+                                options={[
+                                    { value: 'aadhar', label: 'Aadhar Card' },
+                                    { value: 'pan', label: 'PAN Card' },
+                                    { value: 'certificate', label: 'Skill Certificate' },
+                                    { value: 'license', label: 'Trade License' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Document Number</label>
-                        <input
-                            type="text"
-                            required
-                            value={newDoc.document_number}
-                            onChange={(e) => setNewDoc({ ...newDoc, document_number: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="e.g. XXXX-XXXX-XXXX"
-                        />
+                            <FormInput
+                                label="Document Number"
+                                type="text"
+                                value={newDoc.document_number}
+                                onChange={(e) => setNewDoc({ ...newDoc, document_number: e.target.value })}
+                                placeholder="e.g. XXXX-XXXX-XXXX"
+                                required
+                            />
+                        </div>
+
+                        <div className={styles.uploadSection}>
+                            <ImageUpload
+                                label="Document Image"
+                                value={newDoc.document_url}
+                                onChange={(url) => setNewDoc({ ...newDoc, document_url: url })}
+                            />
+                        </div>
+
+                        <div className={styles.formActions}>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                loading={uploading}
+                                disabled={!newDoc.document_url}
+                            >
+                                <Upload size={18} />
+                                Upload Document
+                            </Button>
+                        </div>
+                    </form>
+                </CardBody>
+            </Card>
+
+            {/* Uploaded Documents Card */}
+            <Card>
+                <CardHeader>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <FileText size={20} style={{ color: 'var(--color-primary-600)' }} />
+                        <CardTitle>Uploaded Documents</CardTitle>
                     </div>
+                </CardHeader>
+                <CardBody>
+                    {documents.length > 0 ? (
+                        <div className={styles.documentsList}>
+                            {documents.map(doc => (
+                                <div key={doc.id} className={styles.documentCard}>
+                                    <div className={styles.documentHeader}>
+                                        <div className={styles.documentInfo}>
+                                            <h4 className={styles.documentType}>{doc.document_type}</h4>
+                                            <p className={styles.documentNumber}>{doc.document_number}</p>
+                                        </div>
+                                        <StatusBadge status={doc.status} />
+                                    </div>
 
-                    <div className="md:col-span-2">
-                        <ImageUpload
-                            label="Document Image"
-                            value={newDoc.document_url}
-                            onChange={(url) => setNewDoc({ ...newDoc, document_url: url })}
-                        />
-                    </div>
-
-                    <div className="md:col-span-2 flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={uploading}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {uploading ? 'Uploading...' : 'Upload Document'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b">
-                    <h3 className="text-lg font-medium text-gray-900">Uploaded Documents</h3>
-                </div>
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {documents.map(doc => (
-                            <tr key={doc.id}>
-                                <td className="px-6 py-4 whitespace-nowrap capitalize">{doc.document_type}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">{doc.document_number}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    {getStatusBadge(doc.status)}
                                     {doc.status === 'rejected' && doc.rejection_reason && (
-                                        <div className="text-xs text-red-600 mt-1">{doc.rejection_reason}</div>
+                                        <div className={styles.rejectionReason}>
+                                            <AlertCircle size={14} />
+                                            <span>{doc.rejection_reason}</span>
+                                        </div>
                                     )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(doc.created_at).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                                    <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-900">View</a>
-                                    {doc.status === 'verified' ? (
-                                        <button
-                                            onClick={() => openChangeRequestModal(doc)}
-                                            className="text-orange-600 hover:text-orange-900"
-                                        >
-                                            Request Change
-                                        </button>
-                                    ) : (
-                                        <button onClick={() => handleDelete(doc.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                        {documents.length === 0 && (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No documents uploaded</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+
+                                    <div className={styles.documentFooter}>
+                                        <span className={styles.documentDate}>
+                                            <Clock size={14} />
+                                            {formatDate(doc.created_at)}
+                                        </span>
+                                        <div className={styles.documentActions}>
+                                            <a
+                                                href={doc.document_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={styles.viewLink}
+                                            >
+                                                <Eye size={16} />
+                                                View
+                                            </a>
+                                            {doc.status === 'verified' ? (
+                                                <button
+                                                    onClick={() => openChangeRequestModal(doc)}
+                                                    className={styles.changeButton}
+                                                >
+                                                    Request Change
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleDelete(doc.id)}
+                                                    className={styles.deleteButton}
+                                                >
+                                                    <Trash2 size={16} />
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>📄</div>
+                            <h3 className={styles.emptyTitle}>No Documents Uploaded</h3>
+                            <p className={styles.emptyText}>
+                                Upload your documents for verification to start accepting bookings
+                            </p>
+                        </div>
+                    )}
+                </CardBody>
+            </Card>
 
             {/* Change Request Modal */}
             {changeRequestModal.open && (
