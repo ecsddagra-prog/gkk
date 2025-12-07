@@ -70,13 +70,15 @@ export default async function handler(req, res) {
     }
 
     // Check if service is enabled in the city
-    const { data: cityService } = await supabaseAdmin
+    const { data: cityService, error: cityServiceError } = await supabaseAdmin
       .from('city_services')
       .select('*')
       .eq('city_id', city_id)
       .eq('service_id', service_id)
       .eq('is_enabled', true)
-      .single()
+      .maybeSingle()
+
+    console.log('🏙️ City service check:', { city_id, service_id, found: !!cityService, error: cityServiceError })
 
     if (!cityService) {
       return res.status(400).json({ error: 'Service not available in this city' })

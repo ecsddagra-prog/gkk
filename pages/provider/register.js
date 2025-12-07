@@ -44,7 +44,7 @@ export default function ProviderRegister({ user }) {
 
         if (providerData && !providerError) {
           console.log('User already has provider record, redirecting to provider dashboard')
-          toast.info('You are already registered as a provider')
+          toast('You are already registered as a provider')
           router.replace('/provider/dashboard')
           return
         }

@@ -1,0 +1,79 @@
+.scanner {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.scanner h2 {
+  margin: 0 0 1.5rem 0;
+  color: #2d3748;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.field input {
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.summary {
+  background: #f7fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.summary p {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.confirmBtn {
+  background: #48bb78;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: #38a169;
+  transform: translateY(-2px);
+}
+
+.confirmBtn:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}

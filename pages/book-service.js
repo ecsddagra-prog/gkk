@@ -629,7 +629,12 @@ export default function BookService({ user }) {
                               <p className="text-sm text-gray-600 mt-1">{subService.description}</p>
                             )}
                           </div>
-                          <span className="text-blue-600 font-semibold ml-4">₹{subService.base_charge}</span>
+                          <div className="text-right ml-4">
+                            <span className="text-blue-600 font-semibold">₹{subService.base_charge}</span>
+                            {subService.unit && (
+                              <p className="text-xs text-gray-500 mt-0.5">per {subService.unit}</p>
+                            )}
+                          </div>
                         </div>
 
                         {/* Sub-Sub-Services (Addons) */}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -14,11 +14,15 @@ L.Icon.Default.mergeOptions({
 function MapEvents({ value, onChange, readOnly }) {
     const map = useMap()
     const isFirstLoad = useRef(true)
+    const isInitialized = useRef(false)
 
     useEffect(() => {
-        if (value && isFirstLoad.current) {
-            map.setView([value.lat, value.lng], map.getZoom())
-            isFirstLoad.current = false
+        if (!isInitialized.current) {
+            isInitialized.current = true
+            if (value && isFirstLoad.current) {
+                map.setView([value.lat, value.lng], map.getZoom())
+                isFirstLoad.current = false
+            }
         }
     }, [value, map])
 
@@ -106,13 +110,18 @@ function LocateButton({ readOnly }) {
 }
 
 export default function LocationPickerMap({ center, zoom, value, onChange, readOnly }) {
+    const mapKey = useMemo(() => Math.random().toString(36), [])
+    const mapCenter = useMemo(() => value ? [value.lat, value.lng] : center, [value, center])
+    
     return (
         <div className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-300 relative">
             <MapContainer
-                center={value ? [value.lat, value.lng] : center}
+                key={mapKey}
+                center={mapCenter}
                 zoom={zoom}
                 zoomControl={true}
                 style={{ height: '100%', width: '100%' }}
+                whenReady={() => console.log('Map ready')}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

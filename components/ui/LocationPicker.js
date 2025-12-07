@@ -1,4 +1,13 @@
-import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+
+const MapComponent = dynamic(() => import('./LocationPickerMap'), {
+    ssr: false,
+    loading: () => (
+        <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-lg flex items-center justify-center">
+            <span className="text-gray-400">Loading map...</span>
+        </div>
+    ),
+})
 
 export default function LocationPicker({
     center = [27.1767, 78.0081],
@@ -7,29 +16,6 @@ export default function LocationPicker({
     onChange,
     readOnly = false
 }) {
-    const [mapLoaded, setMapLoaded] = useState(false)
-    const [MapComponent, setMapComponent] = useState(null)
-
-    useEffect(() => {
-        // Dynamically import to avoid SSR issues
-        import('./LocationPickerMap')
-            .then((mod) => {
-                setMapComponent(() => mod.default)
-                setMapLoaded(true)
-            })
-            .catch((err) => {
-                console.error('Failed to load map:', err)
-            })
-    }, [])
-
-    if (!mapLoaded || !MapComponent) {
-        return (
-            <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-lg flex items-center justify-center">
-                <span className="text-gray-400">Loading map...</span>
-            </div>
-        )
-    }
-
     return (
         <MapComponent
             center={center}

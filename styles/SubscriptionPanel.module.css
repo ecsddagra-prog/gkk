@@ -1,0 +1,197 @@
+.panel {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.subscriptionsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.subscriptionCard {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s;
+}
+
+.subscriptionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.subscriptionCard h3 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+}
+
+.subscriptionCard p {
+  margin: 0.5rem 0;
+  color: #4a5568;
+}
+
+.subscriptionCard button {
+  margin-top: 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.3s;
+}
+
+.subscriptionCard button:hover {
+  background: #5568d3;
+}
+
+.badge-active {
+  background: #48bb78;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge-paused {
+  background: #ed8936;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge-cancelled {
+  background: #f56565;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.broadcastsSection {
+  margin: 3rem 0;
+}
+
+.broadcastsSection h2 {
+  margin-bottom: 1.5rem;
+  color: #2d3748;
+}
+
+.broadcast-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.broadcast-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+}
+
+.broadcast-card p {
+  color: #4a5568;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.broadcast-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.broadcast-actions input {
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  width: 100px;
+}
+
+.btn-accept {
+  background: #48bb78;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-accept:hover {
+  background: #38a169;
+}
+
+.btn-reject {
+  background: #f56565;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-reject:hover {
+  background: #e53e3e;
+}
+
+.btn-not-today {
+  background: #ed8936;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-not-today:hover {
+  background: #dd6b20;
+}
+
+.ledgerSection {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin: 2rem 0;
+}
+
+.ledgerSection table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.ledgerSection th,
+.ledgerSection td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ledgerSection th {
+  background: #f7fafc;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.ledgerSection td {
+  color: #4a5568;
+}

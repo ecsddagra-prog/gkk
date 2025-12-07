@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import axios from 'axios'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CategoryCard from '../components/CategoryCard'
 import TrustBadge from '../components/TrustBadge'
 import ServiceCard from '../components/ServiceCard'
+import ServiceBookingModal from '../components/booking/ServiceBookingModal'
 
 export default function Home({ user }) {
   const router = useRouter()
@@ -16,6 +18,8 @@ export default function Home({ user }) {
   const [cities, setCities] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [selectedServiceForBooking, setSelectedServiceForBooking] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -62,15 +66,11 @@ export default function Home({ user }) {
 
   const loadServices = async (cityId) => {
     try {
-      const { data } = await supabase
-        .from('city_services')
-        .select('service:services(*, category:service_categories(*))')
-        .eq('city_id', cityId)
-        .eq('is_enabled', true)
-
-      setServices(data?.map(item => item.service).filter(Boolean) || [])
+      const { data } = await axios.get(`/api/catalog/home-services?city_id=${cityId}`)
+      setServices(data.services || [])
     } catch (error) {
       console.error('Error loading services:', error)
+      setServices([])
     }
   }
 
@@ -91,6 +91,15 @@ export default function Home({ user }) {
     )
     : services
 
+  const handleBookService = (service) => {
+    if (!user) {
+      router.push(`/login?redirect=/book-service?service=${service.id}`)
+      return
+    }
+    setSelectedServiceForBooking(service.id)
+    setShowBookingModal(true)
+  }
+
   const popularServices = filteredServices.slice(0, 8)
 
   if (loading) {
@@ -106,13 +115,39 @@ export default function Home({ user }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <Header
         user={user}
         cities={cities}
         selectedCity={selectedCity}
         onCityChange={handleCityChange}
       />
+
+      {/* Popular Services (Moved to Top for Visibility) */}
+      {popularServices.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white border-b border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {searchQuery ? 'Search Results' : 'Popular Services'}
+            </h2>
+            {!searchQuery && (
+              <Link href="/services" className="text-purple-600 hover:text-purple-700 font-medium text-sm">
+                View All →
+              </Link>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {popularServices.map(service => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                category={service.category || categories.find(c => c.id === service.category_id)}
+                onBook={handleBookService}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 text-white overflow-hidden">
@@ -165,54 +200,8 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* Quick Access Categories */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {categories.slice(0, 6).map(category => (
-            <Link
-              key={category.id}
-              href={`/services/${category.id}`}
-              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 text-center group cursor-pointer"
-            >
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
-                {category.icon || '🔧'}
-              </div>
-              <h3 className="font-semibold text-gray-900 text-sm group-hover:text-purple-600 transition">
-                {category.name}
-              </h3>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Popular Services */}
-      {popularServices.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">
-              {searchQuery ? 'Search Results' : 'Popular Services'}
-            </h2>
-            {!searchQuery && (
-              <Link href="/services" className="text-purple-600 hover:text-purple-700 font-medium">
-                View All →
-              </Link>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {popularServices.map(service => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                category={service.category || categories.find(c => c.id === service.category_id)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Service Categories */}
-      <section className="bg-white py-16">
+      <section className="bg-gray-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
             All Services by Category
@@ -304,9 +293,15 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* Footer */}
       <Footer />
+
+      <ServiceBookingModal
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+        user={user}
+        initialServiceId={selectedServiceForBooking}
+        initialCityId={selectedCity}
+      />
     </div>
   )
 }
-

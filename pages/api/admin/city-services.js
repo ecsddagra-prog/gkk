@@ -15,16 +15,26 @@ export default async function handler(req, res) {
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     
-    if (authError) throw authError
+    if (authError) {
+      console.error('Auth error:', authError)
+      throw authError
+    }
 
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
 
+    if (profileError) {
+      console.error('Profile error:', profileError)
+      return res.status(403).json({ error: 'User profile not found' })
+    }
+
+    console.log('User role:', profile?.role, 'User ID:', user.id)
+
     if (!profile || (profile.role !== 'admin' && profile.role !== 'superadmin')) {
-      return res.status(403).json({ error: 'Forbidden: Admin access required' })
+      return res.status(403).json({ error: `Forbidden: Admin access required. Current role: ${profile?.role || 'none'}` })
     }
 
     if (req.method === 'GET') {

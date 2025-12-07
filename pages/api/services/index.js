@@ -16,6 +16,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'category_id and city_id are required' })
     }
 
+    console.log('🔍 Fetching services for:', { city_id, category_id })
+
     const { data, error } = await supabaseAdmin
       .from('city_services')
       .select(`
@@ -29,9 +31,14 @@ export default async function handler(req, res) {
 
     if (error) throw error
 
-    const services = (data || [])
-      .map(item => item.service)
-      .filter(service => service && service.category_id === category_id && service.is_active)
+    console.log('📦 Raw city_services data:', data?.length, 'records')
+    console.log('📦 Sample:', data?.[0])
+
+    const allServices = (data || []).map(item => item.service).filter(s => s)
+    console.log('🔧 All services before filter:', allServices.map(s => ({ id: s.id, name: s.name, category_id: s.category_id, is_active: s.is_active })))
+
+    const services = allServices.filter(service => service.category_id == category_id && service.is_active)
+    console.log('✅ Filtered services:', services.length)
 
     const serviceIds = services.map(service => service.id)
     let subservicesMap = {}

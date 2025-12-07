@@ -586,21 +586,27 @@ export default function AdminServices({ user }) {
                 <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" rows={3} placeholder="Describe the service..." />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Base Price (₹)</label>
-                  <div className="flex gap-2">
-                    <input type="number" value={formData.base_price} onChange={(e) => setFormData({ ...formData, base_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
-                    <UnitSelector value={formData.pricing_unit} onChange={(val) => setFormData({ ...formData, pricing_unit: val })} className="w-[140px]" />
+              <div className="border border-gray-200 rounded-lg p-4 bg-blue-50">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Pricing (Optional)</label>
+                  <span className="text-xs text-blue-600">💡 Providers can set their own price if left empty</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Base Price (₹)</label>
+                    <div className="flex gap-2">
+                      <input type="number" value={formData.base_price} onChange={(e) => setFormData({ ...formData, base_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional" />
+                      {formData.base_price && <UnitSelector value={formData.pricing_unit} onChange={(val) => setFormData({ ...formData, pricing_unit: val })} className="w-[140px]" />}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Price (₹)</label>
-                  <input type="number" value={formData.min_price} onChange={(e) => setFormData({ ...formData, min_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Price (₹)</label>
-                  <input type="number" value={formData.max_price} onChange={(e) => setFormData({ ...formData, max_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0" />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Min Price (₹)</label>
+                    <input type="number" value={formData.min_price} onChange={(e) => setFormData({ ...formData, min_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Price (₹)</label>
+                    <input type="number" value={formData.max_price} onChange={(e) => setFormData({ ...formData, max_price: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional" />
+                  </div>
                 </div>
               </div>
 

@@ -90,32 +90,54 @@ export default function AdminCityServices({ user }) {
     if (!selectedCity) return
 
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Authentication required')
+        router.push('/login')
+        return
+      }
+
       const { data } = await axios.get(`/api/admin/city-services?city_id=${selectedCity}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${session.access_token}` }
       })
       setCityServices(data.city_services || [])
     } catch (error) {
       console.error('Error loading city services:', error)
-      toast.error('Failed to load city services')
+      if (error.response?.status === 403) {
+        toast.error('Admin access required')
+        router.push('/dashboard')
+      } else {
+        toast.error('Failed to load city services')
+      }
     }
   }
 
   const toggleService = async (serviceId, currentStatus) => {
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        toast.error('Authentication required')
+        router.push('/login')
+        return
+      }
+
       await axios.post('/api/admin/city-services', {
         city_id: selectedCity,
         service_id: serviceId,
         is_enabled: !currentStatus
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${session.access_token}` }
       })
 
       toast.success(`Service ${!currentStatus ? 'enabled' : 'disabled'}`)
       loadCityServices()
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to update service')
+      if (error.response?.status === 403) {
+        toast.error('Admin access required')
+        router.push('/dashboard')
+      } else {
+        toast.error(error.response?.data?.error || 'Failed to update service')
+      }
     }
   }
 

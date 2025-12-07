@@ -12,6 +12,8 @@ import DocumentUpload from '../../components/provider/DocumentUpload'
 import StaffManagement from '../../components/provider/StaffManagement'
 import Earnings from '../../components/provider/Earnings'
 import PaymentSettings from '../../components/provider/PaymentSettings'
+import ProviderBookings from '../../components/provider/ProviderBookings'
+import ProviderSubscribers from '../../components/provider/ProviderSubscribers'
 
 export default function ProviderDashboard({ user }) {
   const router = useRouter()
@@ -64,6 +66,8 @@ export default function ProviderDashboard({ user }) {
     switch (activeModule) {
       case 'home': return <ProviderHome user={user} />
       case 'profile': return <MyProfile />
+      case 'bookings': return <ProviderBookings />
+      case 'subscribers': return <ProviderSubscribers />
       case 'services': return <ServiceManagement />
       case 'location-management': return <LocationManagement />
       case 'pricing': return <PricingSettings />
