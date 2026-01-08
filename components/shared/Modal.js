@@ -2,88 +2,95 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 export default function Modal({
-    isOpen,
-    onClose,
-    title,
-    children,
-    size = 'md',
-    showClose = true,
-    className = ''
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+  showClose = true,
+  className = ''
 }) {
-    const modalRef = useRef(null)
+  const modalRef = useRef(null)
 
-    // Handle ESC key press
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose()
-            }
-        }
-
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscape)
-            document.body.style.overflow = 'hidden'
-        }
-
-        return () => {
-            document.removeEventListener('keydown', handleEscape)
-            document.body.style.overflow = 'unset'
-        }
-    }, [isOpen, onClose])
-
-    // Handle click outside
-    const handleBackdropClick = (e) => {
-        if (modalRef.current && !modalRef.current.contains(e.target)) {
-            onClose()
-        }
+  // Handle ESC key press
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
     }
 
-    if (!isOpen) return null
-
-    const sizeClasses = {
-        sm: 'max-w-md',
-        md: 'max-w-2xl',
-        lg: 'max-w-4xl',
-        xl: 'max-w-6xl',
-        full: 'max-w-[95vw]'
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
     }
 
-    return (
-        <>
-            <div
-                className="modal-backdrop"
-                onClick={handleBackdropClick}
-                role="dialog"
-                aria-modal="true"
-            >
-                <div
-                    ref={modalRef}
-                    className={`modal card ${sizeClasses[size]} ${className}`}
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose])
+
+  // Handle click outside - only close if clicking directly on backdrop
+  const handleBackdropClick = (e) => {
+    // Only close if the click target is the backdrop itself, not a child
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  // Prevent modal content clicks from bubbling to backdrop
+  const handleModalClick = (e) => {
+    e.stopPropagation()
+  }
+
+  if (!isOpen) return null
+
+  const sizeClasses = {
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    xl: 'max-w-6xl',
+    full: 'max-w-[95vw]'
+  }
+
+  return (
+    <>
+      <div
+        className="modal-backdrop"
+        onClick={handleBackdropClick}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          ref={modalRef}
+          className={`modal card ${sizeClasses[size]} ${className}`}
+          onClick={handleModalClick}
+        >
+          {/* Modal Header */}
+          {(title || showClose) && (
+            <div className="modal-header">
+              {title && <h2 className="modal-title">{title}</h2>}
+              {showClose && (
+                <button
+                  onClick={onClose}
+                  className="modal-close"
+                  aria-label="Close modal"
                 >
-                    {/* Modal Header */}
-                    {(title || showClose) && (
-                        <div className="modal-header">
-                            {title && <h2 className="modal-title">{title}</h2>}
-                            {showClose && (
-                                <button
-                                    onClick={onClose}
-                                    className="modal-close"
-                                    aria-label="Close modal"
-                                >
-                                    <X size={20} />
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Modal Body */}
-                    <div className="modal-body">
-                        {children}
-                    </div>
-                </div>
+                  <X size={20} />
+                </button>
+              )}
             </div>
+          )}
 
-            <style jsx>{`
+          {/* Modal Body */}
+          <div className="modal-body">
+            {children}
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
         .modal-header {
           display: flex;
           justify-content: space-between;
@@ -135,16 +142,16 @@ export default function Modal({
           }
         }
       `}</style>
-        </>
-    )
+    </>
+  )
 }
 
 // Modal Footer Component
 export function ModalFooter({ children, className = '' }) {
-    return (
-        <div className={`modal-footer ${className}`}>
-            {children}
-            <style jsx>{`
+  return (
+    <div className={`modal-footer ${className}`}>
+      {children}
+      <style jsx>{`
         .modal-footer {
           display: flex;
           gap: var(--space-3);
@@ -164,6 +171,6 @@ export function ModalFooter({ children, className = '' }) {
           }
         }
       `}</style>
-        </div>
-    )
+    </div>
+  )
 }

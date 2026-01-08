@@ -18,7 +18,6 @@ function ProviderBookingsContent() {
   const [rateQuotes, setRateQuotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
-  const [activeTab, setActiveTab] = useState('bookings')
 
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -213,70 +212,112 @@ function ProviderBookingsContent() {
     { value: 'completed', label: 'Completed' }
   ]
 
+  const getDisplayItems = () => {
+    let items = [...bookings]
+    if (filter === 'quote_requested') {
+      return [...items, ...rateQuotes.map(rq => ({ ...rq, isRateQuote: true }))]
+    }
+    return items
+  }
+
+  const displayItems = getDisplayItems()
+
   return (
     <div className={styles.bookingsContainer}>
       <div className={styles.contentContainer}>
-        {/* Tabs */}
-        <div className={styles.tabsContainer}>
-          <div className={styles.tabsList}>
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className={`${styles.tabButton} ${activeTab === 'bookings' ? styles.active : ''}`}
-            >
-              <div className={styles.tabContent}>
-                <span>My Bookings</span>
-                <span className={styles.tabCount}>{bookings.length}</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('rate_quotes')}
-              className={`${styles.tabButton} ${activeTab === 'rate_quotes' ? styles.active : ''}`}
-            >
-              <div className={styles.tabContent}>
-                <span>Rate Quote Requests</span>
-                <span className={styles.tabCount}>
-                  {rateQuotes.filter(rq => rq.status === 'open').length}
-                </span>
-              </div>
-            </button>
+        {/* Filters */}
+        <div className={styles.filtersContainer}>
+          <div className={styles.filtersScrollWrapper}>
+            <div className={styles.filtersList}>
+              {filterOptions.map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => setFilter(option.value)}
+                  className={`${styles.filterChip} ${filter === option.value ? styles.active : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Filters - Only for bookings tab */}
-        {activeTab === 'bookings' && (
-          <div className={styles.filtersContainer}>
-            <div className={styles.filtersScrollWrapper}>
-              <div className={styles.filtersList}>
-                {filterOptions.map(option => (
-                  <button
-                    key={option.value}
-                    onClick={() => setFilter(option.value)}
-                    className={`${styles.filterChip} ${filter === option.value ? styles.active : ''}`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Content */}
-        {activeTab === 'bookings' ? (
-          bookings.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📋</div>
-              <h3 className={styles.emptyTitle}>No bookings found</h3>
-              <p className={styles.emptyText}>
-                {filter === 'all'
-                  ? 'You don\'t have any bookings yet'
-                  : `No ${filterOptions.find(f => f.value === filter)?.label.toLowerCase()} bookings`
-                }
-              </p>
-            </div>
-          ) : (
-            <div className={styles.bookingsList}>
-              {bookings.map(booking => (
+        {displayItems.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📋</div>
+            <h3 className={styles.emptyTitle}>No bookings found</h3>
+            <p className={styles.emptyText}>
+              {filter === 'all'
+                ? 'You don\'t have any bookings yet'
+                : `No ${filterOptions.find(f => f.value === filter)?.label.toLowerCase()} bookings`
+              }
+            </p>
+          </div>
+        ) : (
+          <div className={styles.bookingsList}>
+            {displayItems.map(item => {
+              if (item.isRateQuote) {
+                const rq = item
+                const timeRemaining = new Date(rq.expires_at) - Date.now()
+                const minutesLeft = Math.floor(timeRemaining / 60000)
+                const isExpired = timeRemaining <= 0
+
+                return (
+                  <Card key={`rq-${rq.id}`} className={styles.bookingCard}>
+                    <div className={styles.bookingCardContent}>
+                      <div className={styles.bookingInfo}>
+                        <div className={styles.bookingHeader}>
+                          <h3 className={styles.serviceName}>{rq.service?.name}</h3>
+                          <Badge variant={rq.status === 'converted' ? 'success' : isExpired ? 'error' : 'warning'}>
+                            {rq.status === 'converted' ? '✅ Won' : isExpired ? '⏱ Expired' : '🔥 Active'}
+                          </Badge>
+                          {rq.has_responded && <Badge variant="info">✓ Responded</Badge>}
+                        </div>
+
+                        <div className={styles.bookingDetails}>
+                          <div className={styles.detailItem}>
+                            <User size={16} className="text-gray-400" />
+                            <span className={styles.detailValue}>{rq.user?.full_name}</span>
+                          </div>
+                          {rq.requested_price && (
+                            <div className={styles.detailItem}>
+                              <DollarSign size={16} className="text-blue-600" />
+                              <span className={styles.detailValue}>Budget: ₹{rq.requested_price}</span>
+                            </div>
+                          )}
+                          <div className={styles.detailItem}>
+                            <Clock size={16} className={isExpired ? "text-red-600" : "text-orange-600"} />
+                            <span className={styles.detailValue}>
+                              {isExpired ? '⏱ Expired' : `⏱ ${minutesLeft} min remaining`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {rq.my_quote && (
+                          <div className={styles.quoteBox}>
+                            <div className={styles.quoteLabel}>Your Quote</div>
+                            <div className={styles.quoteAmount}>₹{rq.my_quote.quoted_price}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={styles.bookingActions}>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => router.push(`/rate-quote/${rq.id}`)}
+                        >
+                          {rq.has_responded ? '📝 View & Update' : '💰 Submit Quote'}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )
+              }
+
+              const booking = item
+              return (
                 <Card key={booking.id} className={styles.bookingCard}>
                   <div className={styles.bookingCardContent}>
                     <div className={styles.bookingInfo}>
@@ -425,81 +466,11 @@ function ProviderBookingsContent() {
                     </div>
                   </div>
                 </Card>
-              ))}
-            </div>
-          )
-        ) : (
-          /* Rate Quotes Tab */
-          <div className={styles.bookingsList}>
-            {rateQuotes.length === 0 ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>💰</div>
-                <h3 className={styles.emptyTitle}>No rate quote requests</h3>
-                <p className={styles.emptyText}>
-                  Rate quote requests will appear here when users request quotes for your services
-                </p>
-              </div>
-            ) : (
-              rateQuotes.map(rq => {
-                const timeRemaining = new Date(rq.expires_at) - Date.now()
-                const minutesLeft = Math.floor(timeRemaining / 60000)
-                const isExpired = timeRemaining <= 0
-
-                return (
-                  <Card key={rq.id} className={styles.bookingCard}>
-                    <div className={styles.bookingCardContent}>
-                      <div className={styles.bookingInfo}>
-                        <div className={styles.bookingHeader}>
-                          <h3 className={styles.serviceName}>{rq.service?.name}</h3>
-                          <Badge variant={rq.status === 'converted' ? 'success' : isExpired ? 'error' : 'warning'}>
-                            {rq.status === 'converted' ? '✅ Won' : isExpired ? '⏱ Expired' : '🔥 Active'}
-                          </Badge>
-                          {rq.has_responded && <Badge variant="info">✓ Responded</Badge>}
-                        </div>
-
-                        <div className={styles.bookingDetails}>
-                          <div className={styles.detailItem}>
-                            <User size={16} className="text-gray-400" />
-                            <span className={styles.detailValue}>{rq.user?.full_name}</span>
-                          </div>
-                          {rq.requested_price && (
-                            <div className={styles.detailItem}>
-                              <DollarSign size={16} className="text-blue-600" />
-                              <span className={styles.detailValue}>Budget: ₹{rq.requested_price}</span>
-                            </div>
-                          )}
-                          <div className={styles.detailItem}>
-                            <Clock size={16} className={isExpired ? "text-red-600" : "text-orange-600"} />
-                            <span className={styles.detailValue}>
-                              {isExpired ? '⏱ Expired' : `⏱ ${minutesLeft} min remaining`}
-                            </span>
-                          </div>
-                        </div>
-
-                        {rq.my_quote && (
-                          <div className={styles.quoteBox}>
-                            <div className={styles.quoteLabel}>Your Quote</div>
-                            <div className={styles.quoteAmount}>₹{rq.my_quote.quoted_price}</div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={styles.bookingActions}>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => router.push(`/rate-quote/${rq.id}`)}
-                        >
-                          {rq.has_responded ? '📝 View & Update' : '💰 Submit Quote'}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                )
-              })
-            )}
+              )
+            })}
           </div>
         )}
+
       </div>
 
       {/* Complete Modal */}
