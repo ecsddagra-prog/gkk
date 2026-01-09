@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase'
+import { sendNotification } from '../../../../lib/notifications'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -92,15 +93,13 @@ export default async function handler(req, res) {
             })
 
         // Notify user
-        await supabaseAdmin
-            .from('notifications')
-            .insert({
-                user_id: booking.user_id,
-                title: 'Quote Accepted',
-                message: `Provider accepted your quote of ₹${booking.user_quoted_price}`,
-                type: 'booking',
-                reference_id: booking_id
-            })
+        await sendNotification({
+            userId: booking.user_id,
+            title: 'Quote Accepted',
+            message: `Provider accepted your quote of ₹${booking.user_quoted_price}`,
+            type: 'booking',
+            referenceId: booking_id
+        })
 
         return res.status(200).json({
             success: true,

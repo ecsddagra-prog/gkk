@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase'
+import { sendNotification } from '../../../../lib/notifications'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -79,15 +80,13 @@ export default async function handler(req, res) {
 
         // 4. Notify User
         if (booking.user_id) {
-            await supabaseAdmin
-                .from('notifications')
-                .insert({
-                    user_id: booking.user_id,
-                    title: 'Booking Update',
-                    message: `The provider has cancelled your booking. It is now available for other providers to accept.`,
-                    type: 'booking',
-                    reference_id: booking.id
-                })
+            await sendNotification({
+                userId: booking.user_id,
+                title: 'Booking Update',
+                message: `The provider has cancelled your booking. It is now available for other providers to accept.`,
+                type: 'booking',
+                referenceId: booking.id
+            })
         }
 
         return res.status(200).json({ success: true, booking: updatedBooking })

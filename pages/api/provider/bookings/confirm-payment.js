@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase'
+import { sendNotification } from '../../../../lib/notifications'
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -84,6 +85,15 @@ export default async function handler(req, res) {
                     payment_status: 'paid'
                 })
         }
+
+        // 3. Notify User
+        await sendNotification({
+            userId: booking.user_id,
+            title: 'Payment Confirmed',
+            message: `Your payment of ₹${booking.final_price || booking.base_charge || 0} for booking #${booking.booking_number} has been confirmed.`,
+            type: 'booking',
+            referenceId: booking_id
+        })
 
         return res.status(200).json({ success: true, booking: updatedBooking })
 

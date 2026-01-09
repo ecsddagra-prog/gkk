@@ -6,7 +6,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import ServiceCard from '../../components/ServiceCard'
 
-export default function Services() {
+export default function Services({ user }) {
     const [categories, setCategories] = useState([])
     const [services, setServices] = useState([])
     const [loading, setLoading] = useState(true)
@@ -49,68 +49,79 @@ export default function Services() {
     })
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Header />
+        <div className="min-h-screen bg-[#F8F9FD]">
+            <Header user={user} onSearch={setSearchQuery} />
 
-            <div className="bg-purple-700 py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-4">Our Services</h1>
-                    <p className="text-purple-100 text-xl max-w-2xl mx-auto">
-                        Explore our wide range of professional home services tailored to your needs.
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                {/* Hero section */}
+                <div className="mb-20">
+                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3">Service Catalog</p>
+                    <h1 className="text-6xl font-black text-gray-900 tracking-tighter uppercase leading-none mb-6">
+                        Expert <span className="text-purple-600 italic">Solutions</span>
+                    </h1>
+                    <p className="text-gray-400 font-bold text-xl max-w-2xl leading-relaxed italic">
+                        "Curated professional services delivered by verified local artisans and technicians."
                     </p>
                 </div>
-            </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Search and Filter */}
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            placeholder="Search services..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                    </div>
-                    <div className="md:w-64">
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                {/* Category Selector */}
+                <div className="flex items-center gap-4 overflow-x-auto pb-10 scrollbar-hide -mx-4 px-4">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`px-8 py-4 rounded-[24px] font-black text-sm uppercase tracking-widest transition-all whitespace-nowrap shadow-sm ${selectedCategory === 'all'
+                            ? 'bg-gray-900 text-white shadow-xl shadow-gray-200 ring-4 ring-gray-100'
+                            : 'bg-white text-gray-400 hover:text-gray-600 border border-gray-100 hover:border-gray-200'
+                            }`}
+                    >
+                        Directory
+                    </button>
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id)}
+                            className={`px-8 py-4 rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center gap-3 whitespace-nowrap shadow-sm ${selectedCategory === cat.id
+                                ? 'bg-purple-600 text-white shadow-xl shadow-purple-100 ring-4 ring-purple-50'
+                                : 'bg-white text-gray-400 hover:text-gray-600 border border-gray-100 hover:border-gray-200'
+                                }`}
                         >
-                            <option value="all">All Categories</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                            <span className="text-xl filter drop-shadow-sm">{cat.icon}</span>
+                            <span>{cat.name}</span>
+                        </button>
+                    ))}
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-[450px] bg-white/50 rounded-[40px] animate-pulse border border-gray-100 shadow-sm"></div>
+                        ))}
                     </div>
                 ) : (
-                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                         {filteredServices.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredServices.map(service => (
-                                    <ServiceCard
-                                        key={service.id}
-                                        service={service}
-                                        category={service.category}
-                                    />
-                                ))}
-                            </div>
+                            filteredServices.map(service => (
+                                <ServiceCard
+                                    key={service.id}
+                                    service={service}
+                                    category={service.category}
+                                />
+                            ))
                         ) : (
-                            <div className="text-center py-20 text-gray-500">
-                                No services found matching your criteria.
+                            <div className="col-span-full py-32 glass-premium bg-white/50 rounded-[40px] border border-gray-100 text-center">
+                                <div className="text-8xl mb-6 opacity-10">🔭</div>
+                                <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">End of the line</h3>
+                                <p className="text-gray-400 font-bold mt-2 uppercase tracking-widest text-xs italic">No matching services found in this quadrant.</p>
+                                <button
+                                    onClick={() => { setSearchQuery(''); setSelectedCategory('all') }}
+                                    className="mt-8 px-8 py-3 bg-purple-100 text-purple-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all"
+                                >
+                                    Reset Filters
+                                </button>
                             </div>
                         )}
-                    </>
+                    </div>
                 )}
-            </div>
+            </main>
 
             <Footer />
         </div>

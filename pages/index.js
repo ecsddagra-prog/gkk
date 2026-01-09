@@ -5,21 +5,18 @@ import axios from 'axios'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import CategoryCard from '../components/CategoryCard'
-import TrustBadge from '../components/TrustBadge'
-import ServiceCard from '../components/ServiceCard'
+import MosaicTile from '../components/MosaicTile'
+import FloatingBookingBar from '../components/FloatingBookingBar'
 import ServiceBookingModal from '../components/booking/ServiceBookingModal'
 
 export default function Home({ user }) {
   const router = useRouter()
   const [services, setServices] = useState([])
   const [categories, setCategories] = useState([])
-  const [selectedCity, setSelectedCity] = useState(null)
-  const [cities, setCities] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedServices, setSelectedServices] = useState([])
   const [showBookingModal, setShowBookingModal] = useState(false)
-  const [selectedServiceForBooking, setSelectedServiceForBooking] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -27,36 +24,19 @@ export default function Home({ user }) {
       return
     }
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const loadData = async () => {
     try {
-      // Load cities
-      const { data: citiesData } = await supabase
-        .from('cities')
-        .select('*')
-        .eq('is_active', true)
-        .order('name')
-
-      setCities(citiesData || [])
-      if (citiesData && citiesData.length > 0) {
-        setSelectedCity(citiesData[0].id)
-      }
-
-      // Load categories
       const { data: categoriesData } = await supabase
         .from('service_categories')
         .select('*')
         .eq('is_active', true)
         .order('name')
-
       setCategories(categoriesData || [])
 
-      // Load services for selected city
-      if (citiesData && citiesData.length > 0) {
-        loadServices(citiesData[0].id)
-      }
+      const { data } = await axios.get('/api/catalog/home-services')
+      setServices(data.services || [])
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
@@ -64,24 +44,21 @@ export default function Home({ user }) {
     }
   }
 
-  const loadServices = async (cityId) => {
-    try {
-      const { data } = await axios.get(`/api/catalog/home-services?city_id=${cityId}`)
-      setServices(data.services || [])
-    } catch (error) {
-      console.error('Error loading services:', error)
-      setServices([])
-    }
+  const toggleServiceSelection = (service) => {
+    setSelectedServices(prev => {
+      const isAlreadySelected = prev.find(s => s.id === service.id)
+      if (isAlreadySelected) {
+        return prev.filter(s => s.id !== service.id)
+      } else {
+        return [...prev, service]
+      }
+    })
   }
 
-  useEffect(() => {
-    if (selectedCity) {
-      loadServices(selectedCity)
-    }
-  }, [selectedCity])
-
-  const handleCityChange = (cityId) => {
-    setSelectedCity(cityId)
+  const handleContinueBooking = () => {
+    if (selectedServices.length === 0) return
+    const serviceIds = selectedServices.map(s => s.id).join(',')
+    router.push(`/book-service?services=${serviceIds}`)
   }
 
   const filteredServices = searchQuery
@@ -91,207 +68,115 @@ export default function Home({ user }) {
     )
     : services
 
-  const handleBookService = (service) => {
-    if (!user) {
-      router.push(`/login?redirect=/book-service?service=${service.id}`)
-      return
-    }
-    setSelectedServiceForBooking(service.id)
-    setShowBookingModal(true)
-  }
-
-  const popularServices = filteredServices.slice(0, 8)
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading services...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Preparing your experience...</p>
         </div>
       </div>
     )
   }
 
+  // Group services for the mosaic grid sections
+  const heroService = filteredServices[0]
+  const popularServices = filteredServices.slice(1, 5)
+  const dailyServices = filteredServices.slice(5, 15)
+  const nicheServices = filteredServices.slice(15)
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F8F9FD] pb-32">
       <Header
         user={user}
-        cities={cities}
-        selectedCity={selectedCity}
-        onCityChange={handleCityChange}
+        onSearch={setSearchQuery}
       />
 
-      {/* Popular Services (Moved to Top for Visibility) */}
-      {popularServices.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white border-b border-gray-100">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {searchQuery ? 'Search Results' : 'Popular Services'}
-            </h2>
-            {!searchQuery && (
-              <Link href="/services" className="text-purple-600 hover:text-purple-700 font-medium text-sm">
-                View All →
-              </Link>
-            )}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Top Section: Hero & Popular */}
+        <section className="mb-12">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+                Premium <span className="text-purple-600">Home</span> Services
+              </h2>
+              <p className="text-gray-500 mt-2 text-lg">Asymmetrical, elegant, and at your doorstep.</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {popularServices.map(service => (
-              <ServiceCard
+          <div className="mosaic-grid">
+            {heroService && (
+              <MosaicTile
+                service={heroService}
+                category={categories.find(c => c.id === heroService.category_id)}
+                size="xl"
+                isSelected={selectedServices.some(s => s.id === heroService.id)}
+                onToggleSelect={toggleServiceSelection}
+              />
+            )}
+            {popularServices.map((service, idx) => (
+              <MosaicTile
                 key={service.id}
                 service={service}
-                category={service.category || categories.find(c => c.id === service.category_id)}
-                onBook={handleBookService}
+                category={categories.find(c => c.id === service.category_id)}
+                size={idx % 2 === 0 ? 'medium' : 'large'}
+                isSelected={selectedServices.some(s => s.id === service.id)}
+                onToggleSelect={toggleServiceSelection}
               />
             ))}
           </div>
         </section>
-      )}
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 text-white overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-            backgroundSize: '50px 50px'
-          }}></div>
-        </div>
+        {/* Middle Section: Daily Grid */}
+        <section className="mb-12 pt-12 border-t border-gray-100">
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-900">Daily Essentials</h3>
+            <p className="text-gray-500 mt-1">Services you need every day, delivered with care.</p>
+          </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
-              Home services at your doorstep
-            </h1>
-            <p className="text-xl md:text-2xl text-purple-100 mb-8">
-              What are you looking for?
-            </p>
+          <div className="mosaic-grid">
+            {dailyServices.map((service, idx) => (
+              <MosaicTile
+                key={service.id}
+                service={service}
+                category={categories.find(c => c.id === service.category_id)}
+                size={idx % 3 === 0 ? 'large' : 'medium'}
+                isSelected={selectedServices.some(s => s.id === service.id)}
+                onToggleSelect={toggleServiceSelection}
+              />
+            ))}
+          </div>
+        </section>
 
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-lg shadow-2xl p-2 flex items-center">
-                <span className="text-2xl px-3">🔍</span>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for services (e.g., cleaning, repair, salon...)"
-                  className="flex-1 px-3 py-3 text-gray-900 outline-none text-lg"
+        {/* Bottom Section: Niche & More */}
+        {nicheServices.length > 0 && (
+          <section className="mb-12 pt-12 border-t border-gray-100">
+            <div className="mb-8">
+              <h3 className="text-2xl font-bold text-gray-900">Specialized Services</h3>
+              <p className="text-gray-500 mt-1">For those unique needs that require expert attention.</p>
+            </div>
+
+            <div className="mosaic-grid grayscale hover:grayscale-0 transition-all duration-700">
+              {nicheServices.map((service) => (
+                <MosaicTile
+                  key={service.id}
+                  service={service}
+                  category={categories.find(c => c.id === service.category_id)}
+                  size="small"
+                  isSelected={selectedServices.some(s => s.id === service.id)}
+                  onToggleSelect={toggleServiceSelection}
                 />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="text-gray-400 hover:text-gray-600 px-3"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+              ))}
             </div>
-          </div>
+          </section>
+        )}
+      </main>
 
-          {/* Trust Badges */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto mt-12">
-            <TrustBadge icon="⭐" value="4.8" label="Service Rating" />
-            <TrustBadge icon="👥" value="12M+" label="Customers Globally" />
-            <TrustBadge icon="✅" value="50K+" label="Verified Professionals" />
-          </div>
-        </div>
-      </section>
-
-      {/* Service Categories */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            All Services by Category
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map(category => {
-              const categoryServices = services.filter(s => s.category_id === category.id)
-              if (categoryServices.length === 0) return null
-
-              return (
-                <CategoryCard
-                  key={category.id}
-                  category={category}
-                  services={categoryServices}
-                />
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section className="bg-gradient-to-br from-purple-50 to-blue-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
-            Why Choose Home Solution?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-5xl mb-4">✅</div>
-              <h3 className="font-bold text-lg mb-2 text-gray-900">Verified Professionals</h3>
-              <p className="text-gray-600 text-sm">
-                All service providers are verified and background checked for your safety
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-5xl mb-4">📍</div>
-              <h3 className="font-bold text-lg mb-2 text-gray-900">Real-time Tracking</h3>
-              <p className="text-gray-600 text-sm">
-                Track your service provider in real-time and know exactly when they arrive
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-5xl mb-4">💰</div>
-              <h3 className="font-bold text-lg mb-2 text-gray-900">Cashback & Rewards</h3>
-              <p className="text-gray-600 text-sm">
-                Earn cashback and rewards points on every booking you make
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-5xl mb-4">💬</div>
-              <h3 className="font-bold text-lg mb-2 text-gray-900">24/7 Support</h3>
-              <p className="text-gray-600 text-sm">
-                Our customer support team is available round the clock to help you
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to get started?
-          </h2>
-          <p className="text-xl text-purple-100 mb-8">
-            Join millions of satisfied customers and experience hassle-free home services
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/signup"
-              className="px-8 py-4 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition font-bold text-lg"
-            >
-              Sign Up Now
-            </Link>
-            <Link
-              href="/provider/register"
-              className="px-8 py-4 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition font-bold text-lg border-2 border-white"
-            >
-              Become a Professional
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Floating Action Bar */}
+      <FloatingBookingBar
+        selectedCount={selectedServices.length}
+        onContinue={handleContinueBooking}
+      />
 
       <Footer />
 
@@ -299,8 +184,7 @@ export default function Home({ user }) {
         isOpen={showBookingModal}
         onClose={() => setShowBookingModal(false)}
         user={user}
-        initialServiceId={selectedServiceForBooking}
-        initialCityId={selectedCity}
+        initialServiceId={null}
       />
     </div>
   )

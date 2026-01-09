@@ -211,6 +211,15 @@
     --z-modal: 1050;
     --z-popover: 1060;
     --z-tooltip: 1070;
+
+    /* Premium Additions */
+    --color-gold: #FFD700;
+    --color-silver: #C0C0C0;
+    --color-bronze: #CD7F32;
+    --glass-premium: rgba(255, 255, 255, 0.7);
+    --glass-premium-blur: 25px;
+    --glass-premium-border: rgba(255, 255, 255, 0.4);
+    --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.1);
 }
 
 /* =====================================================
@@ -482,14 +491,33 @@
 
 /* Textarea */
 .textarea {
-    composes: input;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+    font-family: var(--font-family-base);
     min-height: 100px;
     resize: vertical;
 }
 
 /* Select */
 .select {
-    composes: input;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+    font-family: var(--font-family-base);
+    min-height: 44px;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
     background-position: right var(--space-3) center;

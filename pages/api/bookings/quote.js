@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import { sendNotification } from '../../../lib/notifications'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -63,20 +64,18 @@ export default async function handler(req, res) {
         .eq('id', booking.provider_id)
         .single()
 
-      const targetUserId = quoted_by === 'user' 
-        ? provider?.user_id 
+      const targetUserId = quoted_by === 'user'
+        ? provider?.user_id
         : booking.user_id
 
       if (targetUserId) {
-        await supabaseAdmin
-          .from('notifications')
-          .insert({
-            user_id: targetUserId,
-            title: 'New Quote Received',
-            message: `A new quote of ₹${quoted_price} has been submitted for ${booking.service?.name}`,
-            type: 'booking',
-            reference_id: booking_id
-          })
+        await sendNotification({
+          userId: targetUserId,
+          title: 'New Quote Received',
+          message: `A new quote of ₹${quoted_price} has been submitted for ${booking.service?.name}`,
+          type: 'booking',
+          referenceId: booking_id
+        })
       }
     }
 

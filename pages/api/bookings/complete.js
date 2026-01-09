@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import { sendNotification } from '../../../lib/notifications'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -68,15 +69,24 @@ export default async function handler(req, res) {
     }
 
     // Notify user
-    await supabaseAdmin
-      .from('notifications')
-      .insert({
-        user_id: booking.user_id,
+    await sendNotification({
+      userId: booking.user_id,
+      title: 'Booking Completed',
+      message: `Your booking #${booking.booking_number} has been completed. Please rate your experience.`,
+      type: 'booking',
+      referenceId: booking_id
+    })
+
+    // Notify provider
+    if (booking.provider?.user_id) {
+      await sendNotification({
+        userId: booking.provider.user_id,
         title: 'Booking Completed',
-        message: `Your booking #${booking.booking_number} has been completed. Please rate your experience.`,
+        message: `You have successfully completed booking #${booking.booking_number}.`,
         type: 'booking',
-        reference_id: booking_id
+        referenceId: booking_id
       })
+    }
 
     return res.status(200).json({
       message: 'Booking completed successfully',

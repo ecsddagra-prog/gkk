@@ -12,20 +12,21 @@ export default async function handler(req, res) {
     try {
         const { city_id } = req.query
 
-        if (!city_id) {
-            return res.status(400).json({ error: 'city_id is required' })
-        }
-
-        const { data, error } = await supabaseAdmin
+        let query = supabaseAdmin
             .from('city_services')
             .select(`
-        service:services(
-          *,
-          category:service_categories(*)
-        )
-      `)
-            .eq('city_id', city_id)
+                service:services(
+                    *,
+                    category:service_categories(*)
+                )
+            `)
             .eq('is_enabled', true)
+
+        if (city_id) {
+            query = query.eq('city_id', city_id)
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
 

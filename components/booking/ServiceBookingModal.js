@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import { MapPin as MapPinIcon, X } from 'lucide-react'
+import { MapPin as MapPinIcon, X, Layout } from 'lucide-react'
 import LocationPicker from '../ui/LocationPicker'
 
 export default function ServiceBookingModal({ isOpen, onClose, user, initialServiceId, initialCityId }) {
@@ -406,74 +406,80 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex justify-center items-start pt-10 pb-10">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/40 backdrop-blur-md flex justify-center items-start pt-10 pb-10 px-4">
+            <div className="glass-premium bg-white/80 rounded-[48px] shadow-2xl w-full max-w-2xl relative flex flex-col max-h-[90vh] border border-white">
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+                    className="absolute top-6 right-6 p-2 bg-gray-100/50 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-2xl transition-all z-20"
                 >
                     <X size={24} />
                 </button>
 
-                <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900">Book a Service</h2>
+                <div className="p-10 border-b border-gray-100 shrink-0">
+                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Reservation Center</p>
+                    <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Book your <span className="text-purple-600">Experience</span></h2>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1">
+                <div className="p-10 overflow-y-auto flex-1 scrollbar-hide">
                     {loading ? (
-                        <div className="flex justify-center py-10">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                            <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Assembling components...</p>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* City Selection */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Select City *</label>
-                                <select
-                                    required
-                                    value={selectedCity || ''}
-                                    onChange={(e) => setSelectedCity(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">Select City</option>
-                                    {cities.map(city => (
-                                        <option key={city.id} value={city.id}>{city.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Category Selection */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
-                                <select
-                                    required
-                                    value={selectedCategory || ''}
-                                    onChange={(e) => {
-                                        setSelectedCategory(e.target.value)
-                                        setSelectedServiceId(null)
-                                        setSelectedSubServiceIds([])
-                                        setSelectedSubSubServiceIds([])
-                                        setServices([])
-                                    }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
+                        <form onSubmit={handleSubmit} className="space-y-10">
+                            {/* Location & City */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Service City</label>
+                                    <select
+                                        required
+                                        value={selectedCity || ''}
+                                        onChange={(e) => setSelectedCity(e.target.value)}
+                                        className="w-full bg-gray-50/50 border border-gray-100 p-4 rounded-2xl focus:ring-4 focus:ring-purple-100 outline-none font-bold text-gray-700 transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Choose City</option>
+                                        {cities.map(city => (
+                                            <option key={city.id} value={city.id}>{city.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Service Category</label>
+                                    <select
+                                        required
+                                        value={selectedCategory || ''}
+                                        onChange={(e) => {
+                                            setSelectedCategory(e.target.value)
+                                            setSelectedServiceId(null)
+                                            setSelectedSubServiceIds([])
+                                            setSelectedSubSubServiceIds([])
+                                            setServices([])
+                                        }}
+                                        className="w-full bg-gray-50/50 border border-gray-100 p-4 rounded-2xl focus:ring-4 focus:ring-purple-100 outline-none font-bold text-gray-700 transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Service Selection */}
                             {selectedCategory && (
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Service *</label>
+                                <div className="space-y-4">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Available Treatments</label>
                                     {servicesLoading ? (
-                                        <div className="text-center py-4 text-gray-500">Loading services...</div>
+                                        <div className="text-center py-10 opacity-20">
+                                            <div className="animate-spin w-8 h-8 border-2 border-purple-600 rounded-full border-t-transparent mx-auto"></div>
+                                        </div>
                                     ) : services.length === 0 ? (
-                                        <div className="text-center py-4 text-gray-500">No services available</div>
+                                        <div className="text-center py-10 glass-premium rounded-3xl border border-dashed border-gray-200">
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No specialties found here</p>
+                                        </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {services.map(service => (
                                                 <button
                                                     key={service.id}
@@ -483,13 +489,19 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
                                                         setSelectedSubServiceIds([])
                                                         setSelectedSubSubServiceIds([])
                                                     }}
-                                                    className={`p-3 border rounded-lg text-left transition-all ${selectedServiceId === service.id
-                                                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100'
-                                                            : 'border-gray-200 hover:border-gray-300'
+                                                    className={`p-6 rounded-[24px] border transition-all text-left relative overflow-hidden group ${selectedServiceId === service.id
+                                                        ? 'bg-purple-600 border-purple-600 text-white shadow-xl shadow-purple-200'
+                                                        : 'bg-white border-gray-100 text-gray-800 hover:border-purple-200'
                                                         }`}
                                                 >
-                                                    <div className="font-medium text-gray-900">{service.name}</div>
-                                                    <div className="text-sm text-blue-600 mt-1">₹{service.base_price}</div>
+                                                    <div className="relative z-10">
+                                                        <div className={`text-xs font-black uppercase tracking-widest mb-1 ${selectedServiceId === service.id ? 'text-white/60' : 'text-purple-600'}`}>Professional</div>
+                                                        <div className="font-black text-lg uppercase tracking-tighter truncate">{service.name}</div>
+                                                        <div className={`text-sm font-black mt-2 ${selectedServiceId === service.id ? 'text-white' : 'text-gray-900'}`}>₹{service.base_price}</div>
+                                                    </div>
+                                                    {selectedServiceId === service.id && (
+                                                        <div className="absolute -right-4 -bottom-4 text-white/10 text-6xl font-black rotate-12">✓</div>
+                                                    )}
                                                 </button>
                                             ))}
                                         </div>
@@ -499,38 +511,43 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
 
                             {/* Sub Services */}
                             {selectedServiceId && activeService?.sub_services?.length > 0 && (
-                                <div className="border-t pt-4">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-3">Options for {activeService.name}</label>
-                                    <div className="space-y-3">
+                                <div className="space-y-6 pt-6 border-t border-gray-100">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Customize your {activeService.name}</label>
+                                    <div className="grid grid-cols-1 gap-4">
                                         {activeService.sub_services.map(subService => (
-                                            <div key={subService.id} className="border rounded-lg p-3">
-                                                <label className="flex items-start cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedSubServiceIds.includes(subService.id)}
-                                                        onChange={() => handleSubServiceToggle(subService.id)}
-                                                        className="mt-1 mr-3 h-4 w-4 text-blue-600"
-                                                    />
+                                            <div key={subService.id} className={`rounded-[32px] border transition-all p-6 ${selectedSubServiceIds.includes(subService.id) ? 'bg-purple-50/50 border-purple-100' : 'bg-gray-50/30 border-gray-100'}`}>
+                                                <label className="flex items-start cursor-pointer group">
+                                                    <div className="relative mt-1 mr-4">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedSubServiceIds.includes(subService.id)}
+                                                            onChange={() => handleSubServiceToggle(subService.id)}
+                                                            className="hidden"
+                                                        />
+                                                        <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${selectedSubServiceIds.includes(subService.id) ? 'bg-purple-600 border-purple-600' : 'bg-white border-gray-200 group-hover:border-purple-300'}`}>
+                                                            {selectedSubServiceIds.includes(subService.id) && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7"></path></svg>}
+                                                        </div>
+                                                    </div>
                                                     <div className="flex-1">
-                                                        <div className="flex justify-between">
-                                                            <span className="font-medium">{subService.name}</span>
-                                                            <span className="text-blue-600">₹{subService.base_charge}</span>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="font-black text-gray-900 uppercase tracking-tight">{subService.name}</span>
+                                                            <span className="font-black text-purple-600">₹{subService.base_charge}</span>
                                                         </div>
                                                         {selectedSubServiceIds.includes(subService.id) && subService.sub_subservices?.length > 0 && (
-                                                            <div className="mt-2 ml-2 pl-3 border-l-2 border-gray-100 space-y-2">
+                                                            <div className="mt-6 space-y-3">
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest pl-2 mb-2">Extended Options</p>
                                                                 {subService.sub_subservices.map(addon => (
-                                                                    <label key={addon.id} className="flex items-center justify-between cursor-pointer">
-                                                                        <div className="flex items-center">
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={selectedSubSubServiceIds.includes(addon.id)}
-                                                                                onChange={() => handleSubSubServiceToggle(addon.id)}
-                                                                                className="mr-2 h-4 w-4 text-blue-600"
-                                                                            />
-                                                                            <span className="text-sm text-gray-600">{addon.name}</span>
+                                                                    <div
+                                                                        key={addon.id}
+                                                                        onClick={() => handleSubSubServiceToggle(addon.id)}
+                                                                        className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${selectedSubSubServiceIds.includes(addon.id) ? 'bg-white border border-purple-100 shadow-sm' : 'bg-white/40 border border-transparent hover:border-gray-100'}`}
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={`w-4 h-4 rounded-md border transition-all ${selectedSubSubServiceIds.includes(addon.id) ? 'bg-purple-600 border-purple-600' : 'bg-white border-gray-200'}`}></div>
+                                                                            <span className="text-xs font-bold text-gray-600">{addon.name}</span>
                                                                         </div>
-                                                                        <span className="text-sm text-blue-600">+₹{addon.base_charge}</span>
-                                                                    </label>
+                                                                        <span className="text-xs font-black text-gray-900">+₹{addon.base_charge}</span>
+                                                                    </div>
                                                                 ))}
                                                             </div>
                                                         )}
@@ -542,130 +559,115 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
                                 </div>
                             )}
 
-                            {/* Address */}
-                            <div className="border-t pt-4">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Service Address *</label>
-                                {addresses.length > 0 && (
-                                    <div className="mb-3 space-y-2">
-                                        {addresses.map(address => (
-                                            <button
-                                                key={address.id}
-                                                type="button"
-                                                onClick={() => handleAddressSelect(address)}
-                                                className={`w-full text-left p-3 border rounded-lg text-sm ${selectedAddress === address.id
-                                                        ? 'border-blue-500 bg-blue-50'
-                                                        : 'border-gray-200 hover:bg-gray-50'
-                                                    }`}
-                                            >
-                                                <div className="font-medium">{address.address_type}</div>
-                                                <div className="text-gray-500 truncate">{address.address_line1}, {address.city}</div>
-                                            </button>
-                                        ))}
+                            {/* Address & Scheduling */}
+                            <div className="space-y-10 pt-6 border-t border-gray-100">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Location Details</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <button
+                                            type="button"
+                                            onClick={autoDetectCityFromLocation}
+                                            disabled={cityAutoDetecting}
+                                            className="p-4 rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest hover:bg-purple-50 hover:border-purple-100 transition-all flex items-center justify-center gap-2 group shadow-sm bg-white"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <MapPinIcon size={16} />
+                                            </div>
+                                            {cityAutoDetecting ? 'Detecting...' : 'Auto Detect'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={openMapPicker}
+                                            className="p-4 rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-widest hover:bg-purple-50 hover:border-purple-100 transition-all flex items-center justify-center gap-2 group shadow-sm bg-white"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Layout size={16} />
+                                            </div>
+                                            Set on Map
+                                        </button>
                                     </div>
-                                )}
 
-                                <div className="flex gap-2 mb-3">
-                                    <button
-                                        type="button"
-                                        onClick={autoDetectCityFromLocation}
-                                        disabled={cityAutoDetecting}
-                                        className="flex-1 py-2 px-3 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
-                                    >
-                                        {cityAutoDetecting ? 'Detecting...' : '📍 Use Current Location'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={openMapPicker}
-                                        className="flex-1 py-2 px-3 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
-                                    >
-                                        <MapPinIcon size={16} />
-                                        {formData.service_lat ? 'Adjust Pin' : 'Set on Map'}
-                                    </button>
-                                </div>
-
-                                <textarea
-                                    required
-                                    value={formData.service_address}
-                                    onChange={(e) => setFormData({ ...formData, service_address: e.target.value })}
-                                    placeholder="Complete Address"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    rows={2}
-                                />
-                            </div>
-
-                            {/* Schedule */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
-                                    <input
-                                        type="date"
-                                        value={formData.scheduled_date}
-                                        onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        min={new Date().toISOString().split('T')[0]}
+                                    <textarea
+                                        required
+                                        value={formData.service_address}
+                                        onChange={(e) => setFormData({ ...formData, service_address: e.target.value })}
+                                        placeholder="Enter your complete address..."
+                                        className="w-full bg-gray-50/50 border border-gray-100 p-6 rounded-[24px] focus:ring-4 focus:ring-purple-100 outline-none font-bold text-gray-700 transition-all placeholder:text-gray-300 min-h-[100px]"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Time</label>
-                                    <input
-                                        type="time"
-                                        value={formData.scheduled_time}
-                                        onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Target Date</label>
+                                        <input
+                                            type="date"
+                                            value={formData.scheduled_date}
+                                            onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                                            className="w-full bg-gray-50/50 border border-gray-100 p-4 rounded-2xl focus:ring-4 focus:ring-purple-100 outline-none font-bold text-gray-700 appearance-none"
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Arrival Time</label>
+                                        <input
+                                            type="time"
+                                            value={formData.scheduled_time}
+                                            onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
+                                            className="w-full bg-gray-50/50 border border-gray-100 p-4 rounded-2xl focus:ring-4 focus:ring-purple-100 outline-none font-bold text-gray-700 appearance-none"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-
-                            {/* Quote Price */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Your Offer Price (Optional)</label>
-                                <input
-                                    type="number"
-                                    value={formData.user_quoted_price}
-                                    onChange={(e) => setFormData({ ...formData, user_quoted_price: e.target.value })}
-                                    placeholder="Enter amount if you want to negotiate"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-
-                            {/* Price Summary */}
-                            <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                                <span className="font-medium text-gray-700">Estimated Total</span>
-                                <span className="text-xl font-bold text-blue-600">₹{chargeSummary.base}</span>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="submit"
-                                    disabled={submitting || quoteLoading}
-                                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {submitting ? 'Booking...' : 'Book Now'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleRateQuote}
-                                    disabled={submitting || quoteLoading}
-                                    className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 rounded-lg font-bold hover:bg-blue-50 disabled:opacity-50"
-                                >
-                                    {quoteLoading ? 'Requesting...' : 'Request Quote'}
-                                </button>
                             </div>
                         </form>
                     )}
                 </div>
+
+                {/* Footer Section */}
+                {!loading && (
+                    <div className="p-10 bg-gray-900 rounded-b-[48px] shrink-0 border-t border-white/10">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+                            <div className="text-center md:text-left">
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Total Estimated Investment</p>
+                                <p className="text-4xl font-black text-white tracking-tighter">₹{chargeSummary.base}</p>
+                            </div>
+                            <div className="flex gap-4 w-full md:w-auto">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={submitting || quoteLoading}
+                                    className="flex-1 md:flex-none px-10 py-5 bg-purple-600 hover:bg-purple-700 text-white rounded-[24px] font-black text-lg transition-all active:scale-95 shadow-xl shadow-purple-500/20 disabled:opacity-50"
+                                >
+                                    {submitting ? 'Processing...' : 'Reserve Now'}
+                                </button>
+                                <button
+                                    onClick={handleRateQuote}
+                                    disabled={submitting || quoteLoading}
+                                    className="flex-1 md:flex-none px-6 py-5 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-[24px] font-black transition-all active:scale-95"
+                                >
+                                    {quoteLoading ? 'Pending...' : 'Get Quote'}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-6 text-[8px] font-black text-white/20 uppercase tracking-widest">
+                            <span className="flex items-center gap-1">🛡️ Secured</span>
+                            <span className="flex items-center gap-1">⚡ Verified</span>
+                            <span className="flex items-center gap-1">✨ Best Value</span>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Map Modal */}
             {showMapModal && (
-                <div className="fixed inset-0 z-[60] bg-black bg-opacity-75 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg w-full max-w-2xl h-[500px] flex flex-col relative">
-                        <div className="p-4 border-b flex justify-between items-center">
-                            <h3 className="font-bold">Set Location</h3>
-                            <button onClick={() => setShowMapModal(false)}><X size={20} /></button>
+                <div className="fixed inset-0 z-[60] bg-gray-900/80 backdrop-blur-xl flex items-center justify-center p-6">
+                    <div className="glass-premium bg-white/90 rounded-[40px] w-full max-w-2xl h-[600px] flex flex-col relative overflow-hidden border border-white">
+                        <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-white/50">
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 tracking-tighter uppercase">Set Precise Location</h3>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Move the pin to your exact door</p>
+                            </div>
+                            <button onClick={() => setShowMapModal(false)} className="p-3 bg-gray-100 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all"><X size={20} /></button>
                         </div>
-                        <div className="flex-1 relative bg-gray-100">
+                        <div className="flex-1 relative bg-gray-50">
                             <LocationPicker
                                 value={mapCoordinates}
                                 onChange={setMapCoordinates}
@@ -673,12 +675,12 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
                                 zoom={15}
                             />
                         </div>
-                        <div className="p-4 border-t">
+                        <div className="p-8 bg-white border-t border-gray-100">
                             <button
                                 onClick={handleMapConfirm}
-                                className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold"
+                                className="w-full bg-gray-900 text-white py-5 rounded-[24px] font-black text-lg hover:bg-black transition-all active:scale-95 shadow-xl"
                             >
-                                Confirm Location
+                                Confirm Coordinates
                             </button>
                         </div>
                     </div>

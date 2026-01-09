@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import { sendNotification } from '../../../lib/notifications'
 import { checkLowRating } from '../../../lib/utils'
 
 export default async function handler(req, res) {
@@ -116,6 +117,17 @@ export default async function handler(req, res) {
           .from('providers')
           .update({ rating: avgRating })
           .eq('id', booking.provider_id)
+
+        // Notify provider about new rating
+        if (booking.provider?.user_id) {
+          await sendNotification({
+            userId: booking.provider.user_id,
+            title: 'New Review Received',
+            message: `A customer has rated your service: ${rating} stars.`,
+            type: 'booking',
+            referenceId: booking_id
+          })
+        }
       }
 
       // Check for low ratings logic (keep existing)

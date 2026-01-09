@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import { sendNotification } from '../../../lib/notifications'
 import { calculateCashback, calculateRewards } from '../../../lib/utils'
 
 export default async function handler(req, res) {
@@ -89,27 +90,23 @@ export default async function handler(req, res) {
       .single()
 
     // Notify user
-    await supabaseAdmin
-      .from('notifications')
-      .insert({
-        user_id: booking.user_id,
-        title: 'Booking Confirmed',
-        message: `Your booking for ${booking.service?.name} has been confirmed at ₹${finalPrice}`,
-        type: 'booking',
-        reference_id: booking_id
-      })
+    await sendNotification({
+      userId: booking.user_id,
+      title: 'Booking Confirmed',
+      message: `Your booking for ${booking.service?.name} has been confirmed at ₹${finalPrice}`,
+      type: 'booking',
+      referenceId: booking_id
+    })
 
     // Notify provider
     if (provider) {
-      await supabaseAdmin
-        .from('notifications')
-        .insert({
-          user_id: provider.user_id,
-          title: 'Booking Confirmed',
-          message: `Booking #${booking.booking_number} has been confirmed`,
-          type: 'booking',
-          reference_id: booking_id
-        })
+      await sendNotification({
+        userId: provider.user_id,
+        title: 'Booking Confirmed',
+        message: `Booking #${booking.booking_number} has been confirmed`,
+        type: 'booking',
+        referenceId: booking_id
+      })
     }
 
     return res.status(200).json({

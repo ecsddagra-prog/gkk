@@ -3,6 +3,9 @@ import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import Link from 'next/link'
 import { formatCurrency, formatDate, getStatusLabel, getStatusColor } from '../lib/utils'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
+import { Calendar, MapPin, ChevronRight, Hash, User } from 'lucide-react'
 
 export default function Bookings({ user }) {
   const router = useRouter()
@@ -17,7 +20,6 @@ export default function Bookings({ user }) {
     }
     loadBookings()
 
-    // Real-time subscription
     const subscription = supabase
       .channel('public:bookings')
       .on('postgres_changes', {
@@ -26,7 +28,6 @@ export default function Bookings({ user }) {
         table: 'bookings',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
-        console.log('🔔 Booking update received:', payload)
         loadBookings()
       })
       .subscribe()
@@ -34,28 +35,12 @@ export default function Bookings({ user }) {
     return () => {
       supabase.removeChannel(subscription)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter])
 
   const loadBookings = async () => {
     try {
-      console.log('🔍 Loading bookings for user:', user)
-      console.log('📊 User ID:', user?.id)
-      console.log('📧 User email:', user?.email)
-
-      // Check current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('🔐 Current session:', session)
-      console.log('🆔 Session user ID:', session?.user?.id)
-
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError)
-      }
-
-      if (!session) {
-        console.error('❌ No active session found!')
-        return
-      }
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
 
       let query = supabase
         .from('bookings')
@@ -67,18 +52,8 @@ export default function Bookings({ user }) {
         query = query.eq('status', filter)
       }
 
-      console.log('📡 Executing query with filter:', filter)
       const { data, error } = await query
-
-      if (error) {
-        console.error('❌ Query error:', error)
-        console.error('Error details:', JSON.stringify(error, null, 2))
-      }
-
-      console.log('✅ Query result:', data)
-      console.log('📊 Bookings count:', data?.length || 0)
-
-      setBookings(data || [])
+      if (!error) setBookings(data || [])
     } catch (error) {
       console.error('Error loading bookings:', error)
     } finally {
@@ -88,91 +63,138 @@ export default function Bookings({ user }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-[#F8F9FD] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
+  const filters = [
+    { id: 'all', label: 'All Services' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'confirmed', label: 'Scheduled' },
+    { id: 'in_progress', label: 'Ongoing' },
+    { id: 'completed', label: 'Finished' },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Back
-            </Link>
-            <h1 className="text-2xl font-bold text-blue-600">My Bookings</h1>
-            <div></div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F8F9FD]">
+      <Header user={user} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex gap-2">
-            {['all', 'pending', 'confirmed', 'in_progress', 'completed'].map(status => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg capitalize ${filter === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                {status === 'all' ? 'All' : getStatusLabel(status)}
-              </button>
-            ))}
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="mb-16">
+          <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3">Order History</p>
+          <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+            My <span className="text-purple-600 italic">Bookings</span>
+          </h1>
+          <p className="text-gray-400 font-bold mt-4 uppercase tracking-widest text-[10px]">Manage and track your active service requests</p>
         </div>
 
-        {/* Bookings List */}
+        {/* Premium Filter Pills */}
+        <div className="flex flex-wrap gap-4 mb-12">
+          {filters.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-8 py-4 rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all shadow-sm ${filter === f.id
+                ? 'bg-gray-900 text-white shadow-xl shadow-gray-200 ring-4 ring-gray-100'
+                : 'bg-white text-gray-400 hover:text-gray-600 border border-gray-100 hover:border-gray-200'
+                }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {bookings.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-600 mb-4">No bookings found</p>
-            <Link href="/book-service" className="text-blue-600 hover:text-blue-700">
-              Book a service
+          <div className="text-center py-32 glass-premium bg-white/50 rounded-[48px] border border-white shadow-xl">
+            <div className="text-8xl mb-8 opacity-10">📦</div>
+            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Empty Archive</h3>
+            <p className="text-gray-400 font-bold mt-2 mb-10 uppercase tracking-widest text-[10px] max-w-sm mx-auto">You haven't initiated any professional service requests yet.</p>
+            <Link
+              href="/services"
+              className="px-10 py-4 bg-purple-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all active:scale-95"
+            >
+              Discover Services
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {bookings.map(booking => (
-              <div key={booking.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-xl font-semibold">{booking.service?.name}</h3>
-                      <span className={`px-2 py-1 rounded-full text-sm bg-${getStatusColor(booking.status)}-100 text-${getStatusColor(booking.status)}-800`}>
-                        {getStatusLabel(booking.status)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div>Booking #: {booking.booking_number}</div>
-                      <div>Date: {formatDate(booking.scheduled_date || booking.created_at)}</div>
-                      <div>Address: {booking.service_address}</div>
-                      {booking.provider && (
-                        <div>Provider: {booking.provider.user?.full_name || booking.provider.business_name}</div>
-                      )}
-                      {booking.final_price && (
-                        <div className="font-semibold text-green-600">
-                          Amount: {formatCurrency(booking.final_price)}
+              <div key={booking.id} className="group relative">
+                <Link href={`/booking/${booking.id}`}>
+                  <div className="glass-premium bg-white/70 rounded-[40px] p-10 border border-white shadow-xl hover:shadow-2xl transition-all cursor-pointer h-full border-transparent hover:border-purple-200 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 transition-opacity group-hover:opacity-100"></div>
+
+                    <div className="flex justify-between items-start mb-10 relative z-10">
+                      <div className="flex gap-6 items-center">
+                        <div className="w-16 h-16 bg-purple-100 rounded-[24px] flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 transition-transform">
+                          {booking.service?.category?.icon || '🛠️'}
                         </div>
-                      )}
+                        <div>
+                          <h3 className="text-2xl font-black text-gray-900 group-hover:text-purple-600 transition-colors uppercase tracking-tighter leading-none mb-2">
+                            {booking.service?.name}
+                          </h3>
+                          <p className="text-[10px] font-black text-gray-400 tracking-widest uppercase flex items-center gap-1">
+                            <Hash className="w-3 h-3" /> {booking.booking_number}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 mb-10 relative z-10">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-purple-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Schedule</p>
+                          <p className="text-sm font-bold text-gray-700">
+                            {formatDate(booking.scheduled_date || booking.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-purple-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location</p>
+                          <p className="text-sm font-bold text-gray-700 line-clamp-1">
+                            {booking.service_address}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-8 border-t border-gray-100 relative z-10">
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Value</p>
+                        <div className="text-3xl font-black text-gray-900 tracking-tighter">
+                          {booking.final_price ? `₹${booking.final_price}` : `₹${booking.base_charge || 0}`}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-3">
+                        <span className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-sm ${booking.status === 'completed' ? 'bg-green-100 text-green-600' :
+                          booking.status === 'pending' ? 'bg-orange-100 text-orange-600' :
+                            'bg-purple-100 text-purple-600'
+                          }`}>
+                          {getStatusLabel(booking.status)}
+                        </span>
+                        <div className="flex items-center gap-1 text-purple-600 font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                          View <ChevronRight className="w-4 h-4" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <Link
-                    href={`/booking/${booking.id}`}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    View Details
-                  </Link>
-                </div>
+                </Link>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   )
 }

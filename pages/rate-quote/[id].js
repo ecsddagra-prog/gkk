@@ -4,7 +4,10 @@ import { supabase } from '../../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { formatCurrency, formatDateTime } from '../../lib/utils'
+import { formatCurrency, formatDateTime, formatDate } from '../../lib/utils'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
+import { Calendar, MapPin, Clock, ArrowRight, Zap, Star, ShieldCheck, ChevronLeft } from 'lucide-react'
 
 export default function RateQuoteDetails({ user }) {
   const router = useRouter()
@@ -178,119 +181,139 @@ export default function RateQuoteDetails({ user }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href={isOwner ? '/dashboard' : '/provider/dashboard'} className="text-blue-600 hover:text-blue-700">
-              ← Back
-            </Link>
-            <h1 className="text-2xl font-bold text-blue-600">Rate Quote</h1>
-            <div></div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F8F9FD]">
+      <Header user={user} />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
-              <div className="flex justify-between items-center">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb / Back */}
+        <div className="mb-8">
+          <Link href={isOwner ? '/bookings' : '/provider/dashboard'} className="inline-flex items-center gap-2 text-sm font-black text-gray-400 hover:text-purple-600 transition-colors uppercase tracking-widest">
+            <ChevronLeft className="w-4 h-4" /> Back to Dashboard
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Main Info */}
+          <div className="lg:col-span-2 space-y-10">
+            <div className="glass-premium bg-white/70 rounded-[48px] p-10 shadow-2xl border border-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
+
+              <div className="flex justify-between items-start mb-10 relative z-10">
                 <div>
-                  <h2 className="text-xl font-bold">{rateQuote.service?.name}</h2>
-                  {rateQuote.sub_service && (
-                    <p className="text-sm text-gray-500">{rateQuote.sub_service.name}</p>
-                  )}
+                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">{rateQuote.service?.category?.name || 'Service Negotiation'}</p>
+                  <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter leading-none">{rateQuote.service?.name}</h2>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm ${rateQuote.status === 'converted'
-                  ? 'bg-green-100 text-green-700'
+                <span className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm ${rateQuote.status === 'converted'
+                  ? 'bg-green-100 text-green-600'
                   : rateQuote.status === 'cancelled' || rateQuote.status === 'expired'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-yellow-100 text-yellow-700'
+                    ? 'bg-red-100 text-red-600'
+                    : 'bg-orange-100 text-orange-600'
                   }`}>
                   {rateQuote.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative z-10">
+                <div className="bg-gray-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><Clock className="w-12 h-12" /></div>
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Live Auction Ends In</p>
+                  <p className="text-4xl font-black tracking-tight">{countdown}</p>
+                  <p className="text-[10px] font-bold text-white/20 mt-2">Closes at {formatDateTime(rateQuote.expires_at)}</p>
+                </div>
+                <div className="glass-premium bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Target Budget</p>
+                  <p className="text-4xl font-black text-gray-900 tracking-tight">{rateQuote.requested_price ? formatCurrency(rateQuote.requested_price) : 'OPEN BID'}</p>
+                  <p className="text-[10px] font-bold text-purple-400 mt-2 uppercase tracking-widest flex items-center gap-1"><Zap className="w-3 h-3" /> Preferred Rate</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-gray-500">Countdown</div>
-                  <div className="text-3xl font-bold text-blue-600">{countdown}</div>
-                  <div className="text-xs text-gray-400 mt-1">Closes by {formatDateTime(rateQuote.expires_at)}</div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-gray-500">Requested Price</div>
-                  <div className="text-3xl font-bold">{rateQuote.requested_price ? formatCurrency(rateQuote.requested_price) : '—'}</div>
-                  <div className="text-xs text-gray-400 mt-1">User preferred budget</div>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm text-gray-700">
+              <div className="space-y-6 pt-10 border-t border-gray-100 relative z-10">
                 {rateQuote.details?.sub_service_names && (
-                  <div className="bg-blue-50 p-3 rounded-md border border-blue-100 mb-3">
-                    <span className="font-semibold block text-blue-800 mb-1">Requested Services:</span>
-                    <span className="text-blue-900">{rateQuote.details.sub_service_names}</span>
+                  <div className="bg-purple-50/50 rounded-2xl p-6 border border-purple-100">
+                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Requested Scope</p>
+                    <p className="text-sm font-bold text-purple-900 italic leading-relaxed">"{rateQuote.details.sub_service_names}"</p>
                   </div>
                 )}
-                <div><span className="font-semibold">Address:</span> {rateQuote.details?.service_address}</div>
-                {rateQuote.details?.scheduled_date && (
-                  <div><span className="font-semibold">Schedule:</span> {formatDateTime(rateQuote.details.scheduled_date)}</div>
-                )}
-                {rateQuote.details?.base_charge && (
-                  <div>
-                    <span className="font-semibold">Estimated Rate:</span> {formatCurrency(rateQuote.details.base_charge)}
-                    {rateQuote.details?.hourly_charge && (
-                      <span className="ml-4">Hourly: {formatCurrency(rateQuote.details.hourly_charge)}/hr</span>
-                    )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Site Location</p>
+                      <p className="text-xs font-bold text-gray-700 truncate max-w-[200px]">{rateQuote.details?.service_address}</p>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <span className="font-semibold">Booking For:</span> {rateQuote.details?.for_whom || 'self'}
-                  {rateQuote.details?.for_whom === 'other' && rateQuote.details?.other_contact && (
-                    <span className="ml-2 text-gray-500">
-                      ({rateQuote.details.other_contact.name}, {rateQuote.details.other_contact.phone})
-                    </span>
-                  )}
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Preferred Schedule</p>
+                      <p className="text-xs font-bold text-gray-700">
+                        {rateQuote.details?.scheduled_date ? formatDateTime(rateQuote.details.scheduled_date) : 'Flexible'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Provider Quotes</h3>
-                <div className="text-sm text-gray-500">{activeQuotes.length} response(s)</div>
+            {/* Provider List */}
+            <div className="glass-premium bg-white/70 rounded-[48px] p-10 shadow-xl border border-white">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter italic">Professional Bids</h3>
+                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg shadow-purple-100">{activeQuotes.length} Response(s)</span>
               </div>
+
               {activeQuotes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {rateQuote.status === 'expired' ? 'Countdown ended. No quotes received.' : 'Waiting for providers to respond...'}
+                <div className="text-center py-20 bg-gray-50/50 rounded-[40px] border border-dashed border-gray-200">
+                  <div className="animate-pulse flex flex-col items-center">
+                    <Zap className="w-12 h-12 text-gray-200 mb-4" />
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                      {rateQuote.status === 'expired' ? 'Session Expired' : 'Notifying expert pros...'}
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {activeQuotes.map(quote => (
-                    <div key={quote.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-sm text-gray-500">{quote.provider?.business_name || 'Provider'}</div>
-                          <div className="text-2xl font-bold text-blue-600">{formatCurrency(quote.quoted_price)}</div>
-                          {quote.message && <p className="text-sm text-gray-600 mt-2">{quote.message}</p>}
-                          <div className="text-xs text-gray-400 mt-2">{formatDateTime(quote.created_at)}</div>
+                    <div key={quote.id} className="glass-premium bg-white/50 rounded-[32px] p-8 border border-white shadow-sm hover:shadow-md transition-all">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white text-lg font-black">
+                              {quote.provider?.business_name?.charAt(0) || 'P'}
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Certified Pro</p>
+                              <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">{quote.provider?.business_name || 'Verified Pro'}</h4>
+                            </div>
+                          </div>
+                          <div className="text-4xl font-black text-purple-600 tracking-tighter">{formatCurrency(quote.quoted_price)}</div>
+                          {quote.message && (
+                            <div className="mt-4 p-4 bg-white/80 rounded-2xl border border-purple-50">
+                              <p className="text-xs font-bold text-gray-500 italic leading-relaxed">"{quote.message}"</p>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right space-y-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${quote.status === 'accepted'
-                            ? 'bg-green-100 text-green-700'
+                        <div className="flex flex-col items-end gap-4 w-full md:w-auto">
+                          <span className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-sm ${quote.status === 'accepted'
+                            ? 'bg-green-100 text-green-600'
                             : quote.status === 'rejected'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-yellow-100 text-yellow-700'
+                              ? 'bg-red-100 text-red-600'
+                              : 'bg-white text-orange-600 border border-orange-100'
                             }`}>
                             {quote.status}
                           </span>
                           {isOwner && rateQuote.status !== 'converted' && quote.status === 'pending' && (
                             <button
                               onClick={() => handleAcceptQuote(quote.id)}
-                              className="block px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                              className="w-full md:w-auto px-8 py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-sm transition-all shadow-xl active:scale-95 flex items-center gap-2 group"
                               disabled={acceptingQuote}
                             >
-                              {acceptingQuote ? 'Processing...' : 'Accept Quote'}
+                              {acceptingQuote ? 'Processing...' : 'Accept & Book'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                           )}
                         </div>
@@ -302,57 +325,74 @@ export default function RateQuoteDetails({ user }) {
             </div>
           </div>
 
-          {/* Provider Bid Panel */}
-          <div className="space-y-6">
+          {/* Right Panel: Submission / Info */}
+          <div className="space-y-10">
+            {/* Bid Form for Providers */}
             {!isOwner && providerId && !['converted', 'expired', 'cancelled'].includes(rateQuote.status) && countdown !== '00:00' && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold mb-2">Submit Your Quote</h3>
-                <p className="text-sm text-gray-500 mb-4">Only verified, available providers can respond.</p>
-                <form onSubmit={handleSubmitBid} className="space-y-4">
+              <div className="bg-gray-900 text-white rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -ml-16 -mt-16"></div>
+                <h3 className="text-xl font-black uppercase tracking-tighter mb-2 italic">Send Your Bid</h3>
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-8">Exclusive to verified professionals</p>
+
+                <form onSubmit={handleSubmitBid} className="space-y-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quote Amount (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      value={providerBid.amount}
-                      onChange={(e) => setProviderBid({ ...providerBid, amount: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
-                    />
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Quote Amount (INR)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-purple-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={providerBid.amount}
+                        onChange={(e) => setProviderBid({ ...providerBid, amount: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 p-5 pl-10 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none font-black text-2xl tracking-tighter"
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
+                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Expert Note</label>
                     <textarea
-                      rows={3}
+                      rows={4}
                       value={providerBid.message}
                       onChange={(e) => setProviderBid({ ...providerBid, message: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="Mention inclusions, arrival ETA, etc."
+                      className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none font-bold text-sm text-white/80 placeholder:text-white/10"
+                      placeholder="Special inclusions, time estimate..."
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="w-full py-5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-purple-500/10 active:scale-95 disabled:opacity-50"
                     disabled={submittingBid}
                   >
-                    {submittingBid ? 'Submitting...' : providerBid.amount ? 'Update Quote' : 'Submit Quote'}
+                    {submittingBid ? 'Submitting...' : providerBid.amount ? 'Update Bid' : 'Submit Bid'}
                   </button>
                 </form>
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold mb-2">How countdown works?</h3>
-              <ul className="list-disc list-inside text-sm text-gray-600 space-y-2">
-                <li>Providers must respond before the timer hits zero.</li>
-                <li>User can accept any quote to instantly create a booking.</li>
-                <li>Once accepted, other quotes are rejected automatically.</li>
-              </ul>
+            <div className="glass-premium bg-white/70 rounded-[40px] p-10 border border-white shadow-xl">
+              <h3 className="text-xl font-black uppercase tracking-tighter mb-6 italic">Secure Auction</h3>
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0"><ShieldCheck className="w-4 h-4" /></div>
+                  <p className="text-xs font-bold text-gray-500 leading-relaxed">Top-rated pros receive instant alerts for your request.</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0"><Zap className="w-4 h-4" /></div>
+                  <p className="text-xs font-bold text-gray-500 leading-relaxed">Auction ends instantly when you accept any bid.</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center shrink-0"><Star className="w-4 h-4" /></div>
+                  <p className="text-xs font-bold text-gray-500 leading-relaxed">Compare prices and pro profiles side-by-side.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   )
 }
-

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../../lib/supabase'
+import { sendNotification } from '../../../../lib/notifications'
 
 export default async function handler(req, res) {
     if (req.method !== 'PATCH') {
@@ -99,37 +100,58 @@ export default async function handler(req, res) {
             console.warn('Could not record status history:', historyError.message)
         }
 
-        // 3. Send notification to user
-        if (booking.user_id) {
-            let message = `Your booking status has been updated to ${status}`
+        // 3. Send notifications
+        const customerId = booking.user_id
+        const providerUserId = booking.provider?.user_id
+
+        if (customerId || providerUserId) {
+            let userMessage = `Your booking status has been updated to ${status}`
+            let providerMessage = `Booking #${booking.booking_number} status updated to ${status}`
 
             switch (status) {
                 case 'confirmed':
-                    message = 'Your booking has been accepted by the provider!'
+                    userMessage = 'Your booking has been accepted by the provider!'
+                    providerMessage = `You have accepted booking #${booking.booking_number}`
                     break
                 case 'on_way':
-                    message = 'The provider is on the way to your location.'
+                    userMessage = 'The provider is on the way to your location.'
+                    providerMessage = `You are on the way for booking #${booking.booking_number}`
                     break
                 case 'in_progress':
-                    message = 'The provider has started the work.'
+                    userMessage = 'The provider has started the work.'
+                    providerMessage = `You have started work for booking #${booking.booking_number}`
                     break
                 case 'completed':
-                    message = 'Your booking is completed! Please rate your experience.'
+                    userMessage = 'Your booking is completed! Please rate your experience.'
+                    providerMessage = `You have completed booking #${booking.booking_number}`
                     break
                 case 'cancelled':
-                    message = 'Your booking has been cancelled.'
+                    userMessage = 'Your booking has been cancelled.'
+                    providerMessage = `Booking #${booking.booking_number} has been cancelled`
                     break
             }
 
-            await supabaseAdmin
-                .from('notifications')
-                .insert({
-                    user_id: booking.user_id,
+            // Notify Customer
+            if (customerId) {
+                await sendNotification({
+                    userId: customerId,
                     title: 'Booking Update',
-                    message,
+                    message: userMessage,
                     type: 'booking',
-                    reference_id: id
+                    referenceId: id
                 })
+            }
+
+            // Notify Provider
+            if (providerUserId) {
+                await sendNotification({
+                    userId: providerUserId,
+                    title: 'Booking Update',
+                    message: providerMessage,
+                    type: 'booking',
+                    referenceId: id
+                })
+            }
         }
 
         return res.status(200).json({ success: true, booking })

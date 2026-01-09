@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../../lib/supabase'
+import { sendNotification } from '../../../lib/notifications'
 
 // Calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -300,17 +301,24 @@ export default async function handler(req, res) {
         .single()
 
       if (provider) {
-        await supabaseAdmin
-          .from('notifications')
-          .insert({
-            user_id: provider.user_id,
-            title: 'New Booking Request',
-            message: `You have a new booking request for ${service.name}`,
-            type: 'booking',
-            reference_id: booking.id
-          })
+        await sendNotification({
+          userId: provider.user_id,
+          title: 'New Booking Request',
+          message: `You have a new booking request for ${service.name}`,
+          type: 'booking',
+          referenceId: booking.id
+        })
       }
     }
+
+    // Create notification for customer
+    await sendNotification({
+      userId: user_id,
+      title: 'Booking Created',
+      message: `Your booking for ${service.name} has been created successfully.`,
+      type: 'booking',
+      referenceId: booking.id
+    })
 
     // Insert initial status history
     await supabaseAdmin
