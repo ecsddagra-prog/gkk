@@ -50,17 +50,10 @@ export default function ProviderLayout({ children, activeModule, setActiveModule
 
     const menuItems = [
         { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'profile', label: 'My Profile', icon: User },
         { id: 'bookings', label: 'My Bookings', icon: Calendar },
-        { id: 'subscribers', label: 'My Subscribers', icon: Users },
-        { id: 'services', label: 'Service Management', icon: Wrench },
-        { id: 'location-management', label: 'Location Management', icon: MapPin },
-        { id: 'pricing', label: 'Service Charges', icon: DollarSign },
-        { id: 'portfolio', label: 'Experience & Portfolio', icon: Award },
-        { id: 'documents', label: 'License & KYC', icon: FileText },
-        { id: 'payment-settings', label: 'Payment Settings', icon: CreditCard },
-        { id: 'staff', label: 'Staff Management', icon: Users },
-        { id: 'earnings', label: 'Earnings & Reviews', icon: TrendingUp },
+        { id: 'services-portfolio', label: 'Services & Portfolio', icon: Wrench },
+        { id: 'growth-customers', label: 'Growth & Customers', icon: TrendingUp },
+        { id: 'profile-settings', label: 'Profile & Settings', icon: User },
     ]
 
     const handleNavClick = (item) => {

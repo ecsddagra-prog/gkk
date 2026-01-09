@@ -65,14 +65,19 @@ export default function PricingSettings() {
     return (
         <div className={styles.container}>
             {/* Travel Charges Card */}
-            <Card>
+            <Card className={styles.card}>
                 <CardHeader>
                     <div className={styles.cardHeaderRow}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                            <DollarSign size={20} className={styles.cardIcon} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                            <div className={`${styles.iconWrapper} ${styles.travel}`}>
+                                <DollarSign size={24} />
+                            </div>
                             <CardTitle>Travel Charges</CardTitle>
                         </div>
                         <div className={styles.toggleWrapper}>
+                            <span className={styles.toggleLabel}>
+                                {settings.enable_travel_charges ? 'Active' : 'Disabled'}
+                            </span>
                             <button
                                 onClick={() => setSettings({ ...settings, enable_travel_charges: !settings.enable_travel_charges })}
                                 className={`${styles.toggleSwitch} ${settings.enable_travel_charges ? styles.active : ''}`}
@@ -80,15 +85,12 @@ export default function PricingSettings() {
                             >
                                 <span className={styles.toggleKnob}></span>
                             </button>
-                            <span className={styles.toggleLabel}>
-                                {settings.enable_travel_charges ? 'Enabled' : 'Disabled'}
-                            </span>
                         </div>
                     </div>
                 </CardHeader>
 
                 {settings.enable_travel_charges && (
-                    <CardBody>
+                    <div className={styles.formBody}>
                         <div className={styles.formGrid}>
                             <FormSelect
                                 label="Charge Type"
@@ -118,19 +120,24 @@ export default function PricingSettings() {
                                 helpText="Distance within which travel is free"
                             />
                         </div>
-                    </CardBody>
+                    </div>
                 )}
             </Card>
 
             {/* GST & Taxes Card */}
-            <Card>
+            <Card className={styles.card}>
                 <CardHeader>
                     <div className={styles.cardHeaderRow}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                            <Percent size={20} className={styles.cardIcon} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                            <div className={`${styles.iconWrapper} ${styles.gst}`}>
+                                <Percent size={24} />
+                            </div>
                             <CardTitle>GST & Taxes</CardTitle>
                         </div>
                         <div className={styles.toggleWrapper}>
+                            <span className={styles.toggleLabel}>
+                                {settings.gst_enabled ? 'Active' : 'Disabled'}
+                            </span>
                             <button
                                 onClick={() => setSettings({ ...settings, gst_enabled: !settings.gst_enabled })}
                                 className={`${styles.toggleSwitch} ${settings.gst_enabled ? styles.active : ''}`}
@@ -138,15 +145,12 @@ export default function PricingSettings() {
                             >
                                 <span className={styles.toggleKnob}></span>
                             </button>
-                            <span className={styles.toggleLabel}>
-                                {settings.gst_enabled ? 'Enabled' : 'Disabled'}
-                            </span>
                         </div>
                     </div>
                 </CardHeader>
 
                 {settings.gst_enabled && (
-                    <CardBody>
+                    <div className={styles.formBody}>
                         <div className={styles.formSingle}>
                             <FormInput
                                 label="GST Percentage (%)"
@@ -157,19 +161,24 @@ export default function PricingSettings() {
                                 helpText="Standard GST is 18%"
                             />
                         </div>
-                    </CardBody>
+                    </div>
                 )}
             </Card>
 
             {/* Rental/Tool Charges Card */}
-            <Card>
+            <Card className={styles.card}>
                 <CardHeader>
                     <div className={styles.cardHeaderRow}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                            <TrendingUp size={20} className={styles.cardIcon} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                            <div className={`${styles.iconWrapper} ${styles.rental}`}>
+                                <TrendingUp size={24} />
+                            </div>
                             <CardTitle>Rental & Tool Charges</CardTitle>
                         </div>
                         <div className={styles.toggleWrapper}>
+                            <span className={styles.toggleLabel}>
+                                {settings.enable_rental_charges ? 'Active' : 'Disabled'}
+                            </span>
                             <button
                                 onClick={() => setSettings({ ...settings, enable_rental_charges: !settings.enable_rental_charges })}
                                 className={`${styles.toggleSwitch} ${settings.enable_rental_charges ? styles.active : ''}`}
@@ -177,18 +186,15 @@ export default function PricingSettings() {
                             >
                                 <span className={styles.toggleKnob}></span>
                             </button>
-                            <span className={styles.toggleLabel}>
-                                {settings.enable_rental_charges ? 'Enabled' : 'Disabled'}
-                            </span>
                         </div>
                     </div>
                 </CardHeader>
 
-                <CardBody>
+                <div className={styles.formBody}>
                     <p className={styles.helpText}>
                         If enabled, you can add specific rental charges for tools and equipment to the final bill during job completion.
                     </p>
-                </CardBody>
+                </div>
             </Card>
 
             {/* Save Button */}
@@ -198,8 +204,9 @@ export default function PricingSettings() {
                     onClick={handleUpdate}
                     loading={saving}
                     size="lg"
+                    style={{ minWidth: '200px', borderRadius: '50px' }}
                 >
-                    Save Configuration
+                    Save Changes
                 </Button>
             </div>
         </div>

@@ -112,11 +112,15 @@ export default function ExperiencePortfolio() {
     return (
         <div className={styles.container}>
             {/* Professional Profile Card */}
-            <Card>
+            <Card className={styles.sectionCard}>
                 <CardHeader>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <Briefcase size={20} style={{ color: 'var(--color-primary-600)' }} />
-                        <CardTitle>Professional Profile</CardTitle>
+                    <div className={styles.sectionHeader}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <div style={{ padding: '10px', background: '#f0f9ff', borderRadius: '12px', color: '#0284c7' }}>
+                                <Briefcase size={24} />
+                            </div>
+                            <CardTitle className={styles.sectionTitle}>Professional Profile</CardTitle>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardBody>
@@ -156,7 +160,7 @@ export default function ExperiencePortfolio() {
                                 onClick={updateProfile}
                                 loading={saving}
                             >
-                                <Award size={18} />
+                                <Award size={18} style={{ marginRight: '8px' }} />
                                 Save Profile
                             </Button>
                         </div>
@@ -165,18 +169,22 @@ export default function ExperiencePortfolio() {
             </Card>
 
             {/* Work Portfolio Card */}
-            <Card>
+            <Card className={styles.sectionCard}>
                 <CardHeader>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                        <ImageIcon size={20} style={{ color: 'var(--color-primary-600)' }} />
-                        <CardTitle>Work Portfolio</CardTitle>
+                    <div className={styles.sectionHeader}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            <div style={{ padding: '10px', background: '#fef2f2', borderRadius: '12px', color: '#dc2626' }}>
+                                <ImageIcon size={24} />
+                            </div>
+                            <CardTitle className={styles.sectionTitle}>Work Portfolio</CardTitle>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardBody>
                     {/* Add New Image Form */}
                     <form onSubmit={addImage} className={styles.addImageForm}>
                         <h4 className={styles.formTitle}>
-                            <Plus size={18} />
+                            <Plus size={20} />
                             Add New Work Photo
                         </h4>
                         <div className={styles.uploadGrid}>
@@ -200,7 +208,7 @@ export default function ExperiencePortfolio() {
                                     variant="primary"
                                     loading={addingImage}
                                     disabled={!newImage.image_url}
-                                    style={{ marginTop: 'auto' }}
+                                    style={{ marginTop: 'auto', width: '100%' }}
                                 >
                                     Add Photo
                                 </Button>
@@ -221,14 +229,13 @@ export default function ExperiencePortfolio() {
                                             onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error' }}
                                         />
                                         <div className={styles.imageOverlay}>
-                                            <Button
-                                                variant="danger"
-                                                size="sm"
+                                            <button
+                                                type="button"
                                                 onClick={() => deleteImage(item.id)}
+                                                title="Delete Image"
                                             >
-                                                <Trash2 size={16} />
-                                                Delete
-                                            </Button>
+                                                <Trash2 size={20} />
+                                            </button>
                                         </div>
                                     </div>
                                     {item.description && (

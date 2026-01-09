@@ -12,6 +12,10 @@ import DocumentUpload from '../../components/provider/DocumentUpload'
 import StaffManagement from '../../components/provider/StaffManagement'
 import Earnings from '../../components/provider/Earnings'
 import PaymentSettings from '../../components/provider/PaymentSettings'
+import ProviderServicesModule from '../../components/provider/ProviderServicesModule'
+import ProviderGrowthModule from '../../components/provider/ProviderGrowthModule'
+import ProviderSettingsModule from '../../components/provider/ProviderSettingsModule'
+
 import ProviderBookings from '../../components/provider/ProviderBookings'
 import ProviderSubscribers from '../../components/provider/ProviderSubscribers'
 
@@ -65,8 +69,13 @@ export default function ProviderDashboard({ user }) {
   const renderModule = () => {
     switch (activeModule) {
       case 'home': return <ProviderHome user={user} />
-      case 'profile': return <MyProfile />
       case 'bookings': return <ProviderBookings />
+      case 'services-portfolio': return <ProviderServicesModule />
+      case 'growth-customers': return <ProviderGrowthModule user={user} />
+      case 'profile-settings': return <ProviderSettingsModule />
+
+      // Keep old routes accessible for direct links if any, but hide from menu
+      case 'profile': return <MyProfile />
       case 'subscribers': return <ProviderSubscribers />
       case 'services': return <ServiceManagement />
       case 'location-management': return <LocationManagement />
@@ -76,6 +85,7 @@ export default function ProviderDashboard({ user }) {
       case 'staff': return <StaffManagement />
       case 'earnings': return <Earnings user={user} />
       case 'payment-settings': return <PaymentSettings />
+
       default: return <ProviderHome user={user} />
     }
   }

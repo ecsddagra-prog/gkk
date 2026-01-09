@@ -1,12 +1,35 @@
-/* Pricing Settings Styles */
+/* Pricing Settings Styles - Premium Redesign */
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: var(--space-6);
+    padding: var(--space-8) var(--space-4);
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-8);
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card Styling Override */
+.card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), 
+                0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05), 
+                0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .cardHeaderRow {
@@ -14,29 +37,52 @@
     justify-content: space-between;
     align-items: center;
     gap: var(--space-4);
-    flex-wrap: wrap;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--color-gray-100);
 }
 
-.cardIcon {
-    color: var(--color-primary-600);
+.iconWrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f7ff; /* Fallback */
+    transition: background-color 0.2s;
 }
 
+/* Specific colors for icons */
+.iconWrapper.travel { color: #0066cc; background: #e6f0fa; }
+.iconWrapper.gst { color: #7c3aed; background: #f3e8ff; }
+.iconWrapper.rental { color: #059669; background: #ecfdf5; }
+
+/* Enhanced Toggle Switch */
 .toggleWrapper {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    background: var(--color-gray-50);
+    padding: 6px 12px;
+    border-radius: 30px;
+    border: 1px solid var(--color-gray-200);
 }
 
 .toggleSwitch {
     position: relative;
-    width: 48px;
+    width: 44px;
     height: 24px;
     background: var(--color-gray-300);
-    border-radius: var(--radius-md);
+    border-radius: 20px;
     cursor: pointer;
-    transition: background var(--transition-fast);
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     border: none;
-    flex-shrink: 0;
+    padding: 0;
+    outline: none;
+}
+
+.toggleSwitch:focus-visible {
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.4);
 }
 
 .toggleSwitch.active {
@@ -50,70 +96,90 @@
     width: 20px;
     height: 20px;
     background: white;
-    border-radius: var(--radius-sm);
-    transition: transform var(--transition-fast);
-    box-shadow: var(--shadow-sm);
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .toggleSwitch.active .toggleKnob {
-    transform: translateX(24px);
+    transform: translateX(20px);
 }
 
 .toggleLabel {
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
+    font-weight: 600;
     color: var(--color-text-secondary);
     min-width: 60px;
+    text-align: right;
+    user-select: none;
+}
+
+/* Form Styles */
+.formBody {
+    padding: var(--space-6);
+    background: #fafafa; /* Subtle background for form area */
 }
 
 .formGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
 }
 
 .formSingle {
-    max-width: 400px;
+    max-width: 320px;
 }
 
 .helpText {
     font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
+    color: var(--color-text-tertiary);
     line-height: 1.6;
     margin: 0;
+    max-width: 600px;
 }
 
+/* Actions */
 .actions {
     display: flex;
     justify-content: flex-end;
     padding-top: var(--space-4);
+    position: sticky;
+    bottom: var(--space-4);
+    z-index: 10;
+}
+
+.actions button {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.actions button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .container {
         padding: var(--space-4);
+        gap: var(--space-6);
     }
-
+    
     .cardHeaderRow {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--space-4);
     }
 
     .toggleWrapper {
         width: 100%;
         justify-content: space-between;
+        background: transparent;
+        border: none;
+        padding: 0;
     }
 
     .formGrid {
         grid-template-columns: 1fr;
-    }
-
-    .actions {
-        justify-content: stretch;
-    }
-
-    .actions button {
-        width: 100%;
     }
 }
