@@ -111,6 +111,12 @@ export default function Profile({ user }) {
                 {/* Categories / Actions Grid */}
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <ProfileActionCard
+                        title="Orders & Bookings"
+                        desc="View your complete service history"
+                        icon="📅"
+                        link="/profile/bookings"
+                    />
+                    <ProfileActionCard
                         title="Saved Addresses"
                         desc="Manage your home and office locations"
                         icon="📍"

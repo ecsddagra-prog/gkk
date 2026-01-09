@@ -148,56 +148,7 @@ export default function Dashboard({ user }) {
           </div>
         </div>
 
-        {/* Active Bookings Section */}
-        {bookings.length > 0 && (
-          <section className="mb-16">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tighter uppercase italic">Recent Activity</h2>
-              <Link href="/bookings" className="text-sm font-black text-purple-600 hover:underline flex items-center gap-1">
-                View All <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {bookings.map(booking => (
-                <Link href={`/booking/${booking.id}`} key={booking.id}>
-                  <div className="glass-premium bg-white/70 rounded-[32px] p-6 border border-white shadow-xl hover:shadow-2xl transition-all cursor-pointer border-transparent hover:border-purple-200 group">
-                    <div className="flex justify-between items-start mb-4">
-                      <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${booking.status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
-                        }`}>
-                        {getStatusLabel(booking.status)}
-                      </span>
-                      <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-purple-600 transition-colors" />
-                    </div>
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tighter mb-4">{booking.service?.name}</h3>
-                    <div className="space-y-2 mb-6">
-                      <div className="flex items-center gap-2 text-gray-500 font-bold text-xs">
-                        <Calendar className="w-3.5 h-3.5 text-purple-400" /> {formatDate(booking.scheduled_date || booking.created_at)}
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-500 font-bold text-xs">
-                        <MapPin className="w-3.5 h-3.5 text-purple-400" /> {booking.service_address?.split(',')[0]}
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t border-gray-100 flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-100 rounded-full overflow-hidden border border-white shadow-sm">
-                        {booking.provider?.user?.image_url ? (
-                          <img src={booking.provider.user.image_url} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-purple-50 text-purple-600 text-[10px] font-black">
-                            {booking.provider?.user?.full_name?.charAt(0) || 'P'}
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {booking.provider?.user?.full_name || 'Assigning Pro...'}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Discovery Section (Mosaic Grid) */}
         <section>
