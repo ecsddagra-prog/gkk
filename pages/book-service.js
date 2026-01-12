@@ -118,10 +118,13 @@ export default function BookService({ user }) {
   }
 
   const removeService = (serviceId) => {
-    setSelectedServices(prev => prev.filter(s => s.id !== serviceId))
-    if (selectedServices.length <= 1) {
-      router.push('/')
-    }
+    setSelectedServices(prev => {
+      const updated = prev.filter(s => s.id !== serviceId)
+      if (updated.length === 0) {
+        router.push('/')
+      }
+      return updated
+    })
   }
 
   const calculateServicePrice = (service) => {
