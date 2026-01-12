@@ -557,9 +557,10 @@ export default function AdminServices({ user }) {
                       {formData.new_category_name && (
                         <div className="mt-2">
                           <ImageUpload
-                            label="Category Image"
+                            label="Category Image (1:1)"
                             value={formData.new_category_image}
                             onChange={(url) => setFormData({ ...formData, new_category_image: url })}
+                            aspectRatio={1}
                           />
                         </div>
                       )}
@@ -575,9 +576,10 @@ export default function AdminServices({ user }) {
 
               <div>
                 <ImageUpload
-                  label="Service Image"
+                  label="Service Image (4:3)"
                   value={formData.image_url}
                   onChange={(url) => setFormData({ ...formData, image_url: url })}
+                  aspectRatio={4 / 3}
                 />
               </div>
 
@@ -688,13 +690,14 @@ export default function AdminServices({ user }) {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex-1 mr-4">
                           <ImageUpload
-                            label="Variant Image"
+                            label="Variant Image (1:1)"
                             value={sub.image_url}
                             onChange={(url) => {
                               const newSubs = [...formData.sub_services]
                               newSubs[index].image_url = url
                               setFormData({ ...formData, sub_services: newSubs })
                             }}
+                            aspectRatio={1}
                           />
                         </div>
                         <button
@@ -771,13 +774,14 @@ export default function AdminServices({ user }) {
                               <div className="flex items-center justify-between">
                                 <div className="flex-1 mr-2">
                                   <ImageUpload
-                                    label="Option Image"
+                                    label="Option Image (1:1)"
                                     value={subSub.image_url}
                                     onChange={(url) => {
                                       const newSubs = [...formData.sub_services]
                                       newSubs[index].sub_subservices[subIndex].image_url = url
                                       setFormData({ ...formData, sub_services: newSubs })
                                     }}
+                                    aspectRatio={1}
                                   />
                                 </div>
                                 <button
