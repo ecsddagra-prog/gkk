@@ -122,16 +122,17 @@ export default function Addresses({ user }) {
     if (!confirm('Are you sure you want to delete this address?')) return
 
     try {
-      const { error } = await supabase
-        .from('user_addresses')
-        .delete()
-        .eq('id', id)
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      await axios.delete(`/api/users/${user.id}/address`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { address_id: id }
+      })
 
-      if (error) throw error
       toast.success('Address deleted successfully')
       loadAddresses()
     } catch (error) {
-      toast.error('Failed to delete address')
+      console.error('Delete error:', error)
+      toast.error(error.response?.data?.error || 'Failed to delete address')
     }
   }
 

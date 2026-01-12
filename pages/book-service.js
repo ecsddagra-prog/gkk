@@ -14,6 +14,7 @@ export default function BookService({ user }) {
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [quoteLoading, setQuoteLoading] = useState(false)
   const [step, setStep] = useState(1) // 1: Review, 2: Details
 
   // Data State
@@ -179,6 +180,65 @@ export default function BookService({ user }) {
       toast.error('Booking failed. Please try again.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleRateQuote = async () => {
+    if (!selectedAddressId) return toast.error('Please select an address')
+    if (selectedServices.length === 0) return toast.error('Please select at least one service')
+
+    setQuoteLoading(true)
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const address = addresses.find(a => a.id === selectedAddressId)
+      const city = cities.find(c => c.name.toLowerCase() === address.city.toLowerCase())
+
+      // For now, create rate quote for the first service
+      // In future, could support multiple services or create multiple quotes
+      const service = selectedServices[0]
+      const config = serviceConfigs[service.id] || { subServiceIds: [], subSubServiceIds: [] }
+
+      // Build sub-service names for details
+      let subServiceNames = service.name
+      if (config.subServiceIds.length > 0) {
+        const selectedSubs = service.sub_services?.filter(sub => config.subServiceIds.includes(sub.id)) || []
+        if (selectedSubs.length > 0) {
+          subServiceNames = selectedSubs.map(s => s.name).join(', ')
+        }
+      }
+
+      const payload = {
+        service_id: service.id,
+        sub_service_id: config.subServiceIds.length > 0 ? config.subServiceIds[0] : null,
+        city_id: city?.id || null,
+        address_id: selectedAddressId,
+        requested_price: null,
+        details: {
+          service_address: `${address.address_line1}, ${address.city}`,
+          service_lat: address.latitude,
+          service_lng: address.longitude,
+          scheduled_date: scheduledDate && scheduledTime ? `${scheduledDate}T${scheduledTime}:00` : null,
+          for_whom: 'self',
+          other_contact: null,
+          sub_service_names: subServiceNames,
+          sub_service_ids: config.subServiceIds,
+          sub_subservice_ids: config.subSubServiceIds,
+          base_charge: calculateServicePrice(service),
+          hourly_charge: null
+        }
+      }
+
+      const { data } = await axios.post('/api/rate-quotes', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      toast.success('Rate quote requested!')
+      router.push(`/rate-quote/${data.rate_quote.id}`)
+    } catch (error) {
+      console.error('Rate quote error:', error)
+      toast.error(error.response?.data?.error || 'Failed to request rate quote')
+    } finally {
+      setQuoteLoading(false)
     }
   }
 
@@ -366,13 +426,22 @@ export default function BookService({ user }) {
                 </div>
               </div>
 
-              <button
-                onClick={handleCreateBookings}
-                disabled={submitting}
-                className="w-full py-5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xl shadow-xl hover:shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {submitting ? 'Confirming...' : 'Place Booking'}
-              </button>
+              <div className="space-y-4">
+                <button
+                  onClick={handleCreateBookings}
+                  disabled={submitting || quoteLoading}
+                  className="w-full py-5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xl shadow-xl hover:shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {submitting ? 'Confirming...' : 'Place Booking'}
+                </button>
+                <button
+                  onClick={handleRateQuote}
+                  disabled={submitting || quoteLoading}
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {quoteLoading ? 'Requesting...' : 'Get Quote'}
+                </button>
+              </div>
               <p className="text-[10px] text-white/30 text-center mt-4 font-bold uppercase tracking-tighter">Secure 256-bit SSL encrypted payment</p>
             </div>
           </div>

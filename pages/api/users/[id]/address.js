@@ -98,6 +98,38 @@ export default async function handler(req, res) {
       return res.status(200).json({ address })
     }
 
+    if (req.method === 'DELETE') {
+      const { address_id } = req.query
+
+      if (!address_id) {
+        return res.status(400).json({ error: 'address_id is required' })
+      }
+
+      // Check if address is being used by any bookings
+      const { data: bookings, error: bookingCheckError } = await supabaseAdmin
+        .from('bookings')
+        .select('id')
+        .eq('address_id', address_id)
+        .limit(1)
+
+      if (bookingCheckError) throw bookingCheckError
+
+      if (bookings && bookings.length > 0) {
+        return res.status(409).json({
+          error: 'Cannot delete this address as it is associated with existing bookings. You can edit the address instead.'
+        })
+      }
+
+      const { error } = await supabaseAdmin
+        .from('user_addresses')
+        .delete()
+        .eq('id', address_id)
+        .eq('user_id', userId)
+
+      if (error) throw error
+      return res.status(200).json({ success: true })
+    }
+
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
     console.error('User address API error:', error)
