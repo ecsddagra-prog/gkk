@@ -191,12 +191,41 @@ export default function ProviderBookings() {
     }
   }
 
+  const handleAcceptBroadcast = async (rq) => {
+    if (!confirm(`Accept this job for ₹${rq.requested_price}? This will confirm the booking immediately.`)) return
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await axios.post('/api/provider/rate-quotes/accept', {
+        rate_quote_id: rq.id
+      }, {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+      toast.success('Job accepted successfully!')
+      loadData()
+    } catch (error) {
+      console.error('Accept error:', error)
+      toast.error(error.response?.data?.error || 'Failed to accept job')
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
         <LoadingSkeleton variant="rect" width="100%" height="400px" />
       </div>
     )
+  }
+
+  /* Counts Calculation */
+  const counts = {
+    all: bookings.length + rateQuotes.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    quote_requested: bookings.filter(b => b.status === 'quote_requested').length + rateQuotes.length,
+    confirmed: bookings.filter(b => b.status === 'confirmed').length,
+    on_way: bookings.filter(b => b.status === 'on_way').length,
+    in_progress: bookings.filter(b => b.status === 'in_progress').length,
+    completed: bookings.filter(b => b.status === 'completed').length
   }
 
   const filterOptions = [
@@ -212,9 +241,14 @@ export default function ProviderBookings() {
   const getDisplayItems = () => {
     let items = [...bookings]
     if (filter === 'quote_requested') {
+      return [...bookings.filter(b => b.status === 'quote_requested'), ...rateQuotes.map(rq => ({ ...rq, isRateQuote: true }))]
+    }
+    // For 'All', we should probably show rate quotes too? Or keep them separate?
+    // User asked for "Total" tab to show numbers. Usually 'All' includes everything.
+    if (filter === 'all') {
       return [...items, ...rateQuotes.map(rq => ({ ...rq, isRateQuote: true }))]
     }
-    return items
+    return items.filter(b => b.status === filter)
   }
 
   const displayItems = getDisplayItems()
@@ -233,6 +267,9 @@ export default function ProviderBookings() {
                   className={`${styles.filterChip} ${filter === option.value ? styles.active : ''}`}
                 >
                   {option.label}
+                  <span className={`ml-2 px-1.5 py-0.5 rounded-full text-[10px] ${filter === option.value ? 'bg-white text-purple-600' : 'bg-gray-200 text-gray-600'}`}>
+                    {counts[option.value] || 0}
+                  </span>
                 </button>
               ))}
             </div>
@@ -289,6 +326,11 @@ export default function ProviderBookings() {
                               {isExpired ? '⏱ Expired' : `⏱ ${minutesLeft} min remaining`}
                             </span>
                           </div>
+                          {rq.details?.waiting_time_flexibility && (
+                            <div className={styles.detailItem}>
+                              <Badge variant="warning">{rq.details.waiting_time_flexibility}</Badge>
+                            </div>
+                          )}
                         </div>
 
                         {rq.my_quote && (
@@ -299,14 +341,25 @@ export default function ProviderBookings() {
                         )}
                       </div>
 
-                      <div className={styles.bookingActions}>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => router.push(`/rate-quote/${rq.id}`)}
-                        >
-                          {rq.has_responded ? '📝 View & Update' : '💰 Submit Quote'}
-                        </Button>
+                      <div className="mt-auto pt-4 flex gap-2">
+                        {rq.requested_price ? (
+                          <Button
+                            variant="primary" // Changed to primary/green for accept
+                            className="w-full bg-green-600 hover:bg-green-700 text-white border-none"
+                            onClick={() => handleAcceptBroadcast(rq)}
+                          >
+                            ✅ Accept Offer (₹{rq.requested_price})
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => router.push(`/rate-quote/${rq.id}`)}
+                          >
+                            {rq.has_responded ? '📝 View & Update' : '💰 Submit Quote'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>

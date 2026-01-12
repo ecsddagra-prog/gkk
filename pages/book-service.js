@@ -27,6 +27,11 @@ export default function BookService({ user }) {
   const [selectedAddressId, setSelectedAddressId] = useState(null)
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
+  const [waitingTimeFlexibility, setWaitingTimeFlexibility] = useState('Exact Time')
+
+  // Booking Modes: 'standard', 'offer', 'bid'
+  const [bookingMode, setBookingMode] = useState('standard')
+  const [offerPrice, setOfferPrice] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -186,9 +191,22 @@ export default function BookService({ user }) {
     }
   }
 
+  const handleModeAction = () => {
+    if (bookingMode === 'standard') {
+      handleCreateBookings()
+    } else {
+      handleRateQuote()
+    }
+  }
+
   const handleRateQuote = async () => {
     if (!selectedAddressId) return toast.error('Please select an address')
     if (selectedServices.length === 0) return toast.error('Please select at least one service')
+
+    const isOfferMode = bookingMode === 'offer'
+    if (isOfferMode && (!offerPrice || Number(offerPrice) <= 0)) {
+      return toast.error('Please enter your offer price')
+    }
 
     setQuoteLoading(true)
     try {
@@ -215,7 +233,7 @@ export default function BookService({ user }) {
         sub_service_id: config.subServiceIds.length > 0 ? config.subServiceIds[0] : null,
         city_id: city?.id || null,
         address_id: selectedAddressId,
-        requested_price: null,
+        requested_price: bookingMode === 'offer' ? Number(offerPrice) : null,
         details: {
           service_address: `${address.address_line1}, ${address.city}`,
           service_lat: address.latitude,
@@ -227,7 +245,10 @@ export default function BookService({ user }) {
           sub_service_ids: config.subServiceIds,
           sub_subservice_ids: config.subSubServiceIds,
           base_charge: calculateServicePrice(service),
-          hourly_charge: null
+          sub_subservice_ids: config.subSubServiceIds,
+          base_charge: calculateServicePrice(service),
+          hourly_charge: null,
+          waiting_time_flexibility: waitingTimeFlexibility
         }
       }
 
@@ -235,7 +256,7 @@ export default function BookService({ user }) {
         headers: { Authorization: `Bearer ${token}` }
       })
 
-      toast.success('Rate quote requested!')
+      toast.success(bookingMode === 'offer' ? 'Offer broadcasted to providers!' : 'Rate quote requested!')
       router.push(`/rate-quote/${data.rate_quote.id}`)
     } catch (error) {
       console.error('Rate quote error:', error)
@@ -405,50 +426,113 @@ export default function BookService({ user }) {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Final Summary & CTA */}
-            <div className="bg-gray-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mt-16 -mr-16"></div>
-
-              <h4 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-6 text-center">Checkout Summary</h4>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-white/60 font-medium">Subtotal</span>
-                  <span className="font-bold">₹{totalPrice}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-white/60 font-medium">Platform Fee</span>
-                  <span className="font-bold text-green-400">FREE</span>
-                </div>
-                <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                  <span className="text-xl font-black">Total</span>
-                  <span className="text-3xl font-black text-purple-400">₹{totalPrice}</span>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Waiting Time Flexibility</label>
+                  <select
+                    value={waitingTimeFlexibility}
+                    onChange={(e) => setWaitingTimeFlexibility(e.target.value)}
+                    className="w-full bg-white border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-orange-100 outline-none font-bold text-gray-700 appearance-none"
+                  >
+                    <option value="Exact Time">Exact Time (Strict)</option>
+                    <option value="+/- 30 Minutes">+/- 30 Minutes</option>
+                    <option value="+/- 1 Hour">+/- 1 Hour</option>
+                    <option value="+/- 2 Hours">+/- 2 Hours</option>
+                    <option value="+/- 4 Hours">+/- 4 Hours</option>
+                    <option value="Same Day (Anytime)">Same Day (Anytime)</option>
+                    <option value="Flexible (This Week)">Flexible (This Week)</option>
+                  </select>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <button
-                  onClick={handleCreateBookings}
-                  disabled={submitting || quoteLoading}
-                  className="w-full py-5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xl shadow-xl hover:shadow-purple-500/20 transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {submitting ? 'Confirming...' : 'Place Booking'}
-                </button>
-                <button
-                  onClick={handleRateQuote}
-                  disabled={submitting || quoteLoading}
-                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {quoteLoading ? 'Requesting...' : 'Get Quote'}
-                </button>
-              </div>
-              <p className="text-[10px] text-white/30 text-center mt-4 font-bold uppercase tracking-tighter">Secure 256-bit SSL encrypted payment</p>
             </div>
           </div>
 
+          {/* Final Summary & CTA */}
+          <div className="bg-gray-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mt-16 -mr-16"></div>
+
+            <h4 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4 text-center">Booking Mode</h4>
+
+            {/* Booking Mode Selector */}
+            <div className="flex p-1 bg-white/10 rounded-xl mb-6">
+              <button
+                onClick={() => setBookingMode('standard')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'standard' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+              >
+                Standard
+              </button>
+              <button
+                onClick={() => setBookingMode('offer')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'offer' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+              >
+                Your Offer
+              </button>
+              <button
+                onClick={() => setBookingMode('bid')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'bid' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+              >
+                Get Bids
+              </button>
+            </div>
+
+            {/* Mode Specific Content */}
+            <div className="space-y-4 mb-8">
+              {bookingMode === 'standard' && (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-white/60 font-medium">Subtotal</span>
+                    <span className="font-bold">₹{totalPrice}</span>
+                  </div>
+                  <div className="pt-4 border-t border-white/10">
+                    <p className="text-[10px] text-white/40 mb-2">Instant confirmation at provider's rate.</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-black">Total</span>
+                      <span className="text-3xl font-black text-purple-400">₹{totalPrice}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {bookingMode === 'offer' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-white/60 uppercase tracking-widest">Your Offer Price (₹)</label>
+                    <input
+                      type="number"
+                      value={offerPrice}
+                      onChange={(e) => setOfferPrice(e.target.value)}
+                      placeholder={`e.g. ${Math.round(totalPrice * 0.9)}`}
+                      className="w-full bg-white/10 border border-white/20 p-3 rounded-xl text-white placeholder-white/20 focus:ring-2 focus:ring-purple-500 outline-none font-bold"
+                    />
+                    <p className="text-[10px] text-orange-400 font-bold mt-2">
+                      * Providers will be notified. First to accept wins.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {bookingMode === 'bid' && (
+                <div className="text-center py-2">
+                  <p className="text-sm font-bold text-white mb-2">Request Competitive Bids</p>
+                  <p className="text-xs text-white/60 leading-relaxed">
+                    Providers will send you their best quotes. You choose the best rate.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleModeAction}
+              disabled={submitting || quoteLoading}
+              className="w-full py-5 bg-white text-gray-900 hover:bg-purple-50 rounded-2xl font-black text-xl shadow-xl transition-all active:scale-95 disabled:opacity-50"
+            >
+              {submitting || quoteLoading ? 'Processing...' :
+                bookingMode === 'standard' ? 'Book Now' :
+                  bookingMode === 'offer' ? 'Broadcast Offer' :
+                    'Request Quotes'
+              }
+            </button>
+            <p className="text-[10px] text-white/30 text-center mt-4 font-bold uppercase tracking-tighter">Secure 256-bit SSL encrypted payment</p>
+          </div>
         </div>
       </main>
       <Footer />

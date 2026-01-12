@@ -254,6 +254,11 @@ export default function RateQuoteDetails({ user }) {
                       <p className="text-xs font-bold text-gray-700">
                         {rateQuote.details?.scheduled_date ? formatDateTime(rateQuote.details.scheduled_date) : 'Flexible'}
                       </p>
+                      {rateQuote.details?.waiting_time_flexibility && (
+                        <p className="text-[10px] text-purple-600 font-black uppercase tracking-wider mt-1">
+                          Flex: {rateQuote.details.waiting_time_flexibility}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
