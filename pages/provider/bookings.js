@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import axios from 'axios'
@@ -15,6 +15,7 @@ function ProviderBookingsContent() {
   const [user, setUser] = useState(null)
   const [provider, setProvider] = useState(null)
   const [bookings, setBookings] = useState([])
+  const [allBookings, setAllBookings] = useState([])
   const [rateQuotes, setRateQuotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -53,29 +54,35 @@ function ProviderBookingsContent() {
     if (!provider) return
 
     // Subscribe to booking updates
-    const assignedSubscription = supabase
-      .channel(`provider-bookings-${provider.id}`)
+    const channel = supabase
+      .channel(`provider-dashboard-${provider.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'bookings',
         filter: `provider_id=eq.${provider.id}`
       }, () => loadData())
-      .subscribe()
-
-    const unassignedSubscription = supabase
-      .channel(`provider-bookings-unassigned`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'bookings',
-        filter: 'provider_id=is.null'
+        filter: 'provider_id=is.null' // For open requests
+      }, () => loadData())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'rate_quotes' // Listen for all rate quotes, API filters relevance
+      }, () => loadData())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'provider_quotes',
+        filter: `provider_id=eq.${provider.id}`
       }, () => loadData())
       .subscribe()
 
     return () => {
-      supabase.removeChannel(assignedSubscription)
-      supabase.removeChannel(unassignedSubscription)
+      supabase.removeChannel(channel)
     }
   }, [provider])
 
@@ -97,6 +104,12 @@ function ProviderBookingsContent() {
           return
         }
       }
+
+      const allBookingsResponse = await axios.get('/api/provider/bookings/list', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        params: { status: 'all' }
+      })
+      setAllBookings(allBookingsResponse.data.bookings || [])
 
       const bookingsResponse = await axios.get('/api/provider/bookings/list', {
         headers: { Authorization: `Bearer ${session?.access_token}` },
@@ -214,6 +227,9 @@ function ProviderBookingsContent() {
 
   const getDisplayItems = () => {
     let items = [...bookings]
+    if (filter === 'all') {
+      return [...items, ...rateQuotes.map(rq => ({ ...rq, isRateQuote: true }))]
+    }
     if (filter === 'quote_requested') {
       return [...items, ...rateQuotes.map(rq => ({ ...rq, isRateQuote: true }))]
     }
@@ -229,15 +245,27 @@ function ProviderBookingsContent() {
         <div className={styles.filtersContainer}>
           <div className={styles.filtersScrollWrapper}>
             <div className={styles.filtersList}>
-              {filterOptions.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => setFilter(option.value)}
-                  className={`${styles.filterChip} ${filter === option.value ? styles.active : ''}`}
-                >
-                  {option.label}
-                </button>
-              ))}
+              {filterOptions.map(option => {
+                let count = 0;
+                if (option.value === 'all') {
+                  count = allBookings.length + rateQuotes.length;
+                } else if (option.value === 'quote_requested') {
+                  count = allBookings.filter(b => b.status === 'quote_requested').length + rateQuotes.length;
+                } else {
+                  count = allBookings.filter(b => b.status === option.value).length;
+                }
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFilter(option.value)}
+                    className={`${styles.filterChip} ${filter === option.value ? styles.active : ''}`}
+                  >
+                    {option.label} ({count})
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

@@ -22,7 +22,10 @@ export function StatusBadge({ status, children, className = '' }) {
     const variantMap = {
         'pending': 'warning',
         'assigned': 'info',
+        'confirmed': 'success',
+        'on_way': 'info',
         'in_progress': 'info',
+        'quote_requested': 'warning',
         'completed': 'success',
         'cancelled': 'error',
         'rejected': 'error',

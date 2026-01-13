@@ -1,3 +1,4 @@
+import { requireAuthUser } from '../../lib/api-auth'
 import { supabaseAdmin } from '../../lib/supabase'
 
 export default async function handler(req, res) {
@@ -10,17 +11,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const authHeader = req.headers.authorization
-        if (!authHeader) {
-            return res.status(401).json({ error: 'No authorization header' })
-        }
-
-        const token = authHeader.replace('Bearer ', '')
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-
-        if (authError || !user) {
-            return res.status(401).json({ error: 'Unauthorized' })
-        }
+        const user = await requireAuthUser(req)
 
         const { data: notifications, error } = await supabaseAdmin
             .from('notifications')
@@ -34,6 +25,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ notifications })
     } catch (error) {
         console.error('Fetch notifications error:', error)
-        return res.status(500).json({ error: error.message })
+        const status = error.status || 500
+        return res.status(status).json({ error: error.message })
     }
 }

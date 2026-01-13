@@ -93,16 +93,24 @@ export default function Header({ user, onSearch }) {
         }
     }
 
-    const handleNotificationClick = (notification) => {
-        // Mark as read
+    const handleNotificationClick = (e, notification) => {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        console.log('Notification clicked:', notification)
+        
         if (!notification.is_read) {
             markAsRead(notification.id)
         }
 
-        // Navigate to related booking if metadata contains booking_id
-        if (notification.metadata && notification.metadata.booking_id) {
-            router.push(`/booking/${notification.metadata.booking_id}`)
-            setShowNotifications(false)
+        setShowNotifications(false)
+        
+        if (notification.reference_id) {
+            if (notification.type === 'booking') {
+                router.push(`/booking/${notification.reference_id}`)
+            } else if (notification.type === 'rate_quote') {
+                router.push(`/rate-quote/${notification.reference_id}`)
+            }
         }
     }
 
@@ -171,10 +179,10 @@ export default function Header({ user, onSearch }) {
                                                 </div>
                                             ) : (
                                                 notifications.map(n => (
-                                                    <div
+                                                    <button
                                                         key={n.id}
-                                                        onClick={() => handleNotificationClick(n)}
-                                                        className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${!n.is_read ? 'bg-purple-50/30' : ''}`}
+                                                        onClick={(e) => handleNotificationClick(e, n)}
+                                                        className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${!n.is_read ? 'bg-purple-50/30' : ''}`}
                                                     >
                                                         <div className="flex items-start gap-3">
                                                             <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!n.is_read ? 'bg-purple-600' : 'bg-gray-200'}`}></div>
@@ -191,7 +199,7 @@ export default function Header({ user, onSearch }) {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 ))
                                             )}
                                         </div>

@@ -122,6 +122,8 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     white-space: nowrap;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .filterChip:not(.active) {

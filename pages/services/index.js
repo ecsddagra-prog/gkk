@@ -9,6 +9,7 @@ import FloatingBookingBar from '../../components/FloatingBookingBar'
 
 export default function Services({ user }) {
     const [categories, setCategories] = useState([])
+    const [services, setServices] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [searchQuery, setSearchQuery] = useState('')

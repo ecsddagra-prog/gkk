@@ -51,7 +51,11 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Rate quote not found' })
     }
 
-    if (new Date(rateQuote.expires_at) < new Date() || rateQuote.status !== 'open') {
+    if (new Date(rateQuote.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Rate quote has expired' })
+    }
+
+    if (!['open', 'matched'].includes(rateQuote.status)) {
       return res.status(400).json({ error: 'Rate quote is no longer accepting bids' })
     }
 
@@ -67,7 +71,7 @@ export default async function handler(req, res) {
       .select('*')
       .eq('rate_quote_id', id)
       .eq('provider_id', provider.id)
-      .single()
+      .maybeSingle()
 
     let providerQuote
 
