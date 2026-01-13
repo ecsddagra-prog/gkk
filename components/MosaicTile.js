@@ -29,8 +29,8 @@ export default function MosaicTile({ service, category, isSelected, onToggleSele
                 {/* Front Side */}
                 <div className={`flip-card-front absolute inset-0 backface-hidden rounded-3xl overflow-hidden glass-premium flex flex-col p-6 transition-all duration-300 ${isSelected ? 'ring-4 ring-purple-600 ring-offset-2' : ''}`}>
                     <div className="flex justify-between items-start mb-4">
-                        <span className="text-4xl group-hover:scale-110 transition-transform duration-300">
-                            {category?.icon || '🔧'}
+                        <span className="text-2xl font-bold text-gray-900">
+                            {service.name}
                         </span>
                         {service.base_price && (
                             <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
@@ -40,9 +40,6 @@ export default function MosaicTile({ service, category, isSelected, onToggleSele
                     </div>
 
                     <div className="mt-auto">
-                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors leading-tight">
-                            {service.name}
-                        </h3>
                         <div className="flex items-center gap-2 mt-2 opacity-60">
                             <span className="text-xs font-medium uppercase tracking-wider">{category?.name}</span>
                             <span className="text-xs">•</span>

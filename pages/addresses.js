@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { MapPin as MapPinIcon } from 'lucide-react'
+import { MapPin, Edit2, Trash2, Plus, ArrowLeft, Home, Briefcase, X } from 'lucide-react'
 import LocationPicker from '../components/ui/LocationPicker'
 
 export default function Addresses({ user }) {
@@ -26,10 +26,9 @@ export default function Addresses({ user }) {
   })
   const [locating, setLocating] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  // Map Modal State
   const [showMapModal, setShowMapModal] = useState(false)
-  const [mapCoordinates, setMapCoordinates] = useState({ lat: 20.5937, lng: 78.9629 }) // Default: India Center
+  const [mapCoordinates, setMapCoordinates] = useState({ lat: 20.5937, lng: 78.9629 })
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +36,6 @@ export default function Addresses({ user }) {
       return
     }
     loadAddresses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const loadAddresses = async () => {
@@ -119,16 +117,14 @@ export default function Addresses({ user }) {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this address?')) return
-
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token
       await axios.delete(`/api/users/${user.id}/address`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { address_id: id }
       })
-
       toast.success('Address deleted successfully')
+      setDeleteConfirm(null)
       loadAddresses()
     } catch (error) {
       console.error('Delete error:', error)
@@ -146,8 +142,6 @@ export default function Addresses({ user }) {
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
         const { latitude, longitude } = position.coords
-
-        // Update map coordinates if map is open
         setMapCoordinates({ lat: latitude, lng: longitude })
 
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
@@ -179,46 +173,94 @@ export default function Addresses({ user }) {
   }
 
   const openMapPicker = () => {
-    // If we already have lat/long, use it
     if (formData.latitude && formData.longitude) {
       setMapCoordinates({
         lat: Number(formData.latitude),
         lng: Number(formData.longitude)
       })
-    } else {
-      // Try to geocode current address fields if available, otherwise default
-      // For now just defaulting or keeping previous
     }
     setShowMapModal(true)
   }
 
-  const handleMapConfirm = () => {
+  const handleMapConfirm = async () => {
+    const { lat, lng } = mapCoordinates
     setFormData(prev => ({
       ...prev,
-      latitude: mapCoordinates.lat,
-      longitude: mapCoordinates.lng
+      latitude: lat,
+      longitude: lng
     }))
     setShowMapModal(false)
-    toast.success('Location coordinates updated!')
+
+    const toastId = toast.loading('Fetching location details...')
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+      const data = await response.json()
+      const address = data.address || {}
+
+      setFormData(prev => ({
+        ...prev,
+        address_line1: address.road || data.display_name?.split(',')[0] || '',
+        address_line2: address.suburb || '',
+        city: address.city || address.town || address.village || '',
+        state: address.state || '',
+        pincode: address.postcode || '',
+        latitude: lat,
+        longitude: lng
+      }))
+
+      toast.success('Location details auto-filled!', { id: toastId })
+    } catch (error) {
+      console.error('Auto-fill error:', error)
+      toast.error('Location saved, but could not fetch address details', { id: toastId })
+    }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Loading addresses...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/20">
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .address-card {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .address-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px rgba(168, 85, 247, 0.15);
+        }
+        .address-card:hover .action-buttons {
+          opacity: 1;
+        }
+        .action-buttons {
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+      `}</style>
+
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-40 glass-card shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Back
+            <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-purple-600 font-semibold transition-colors group">
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span>Back</span>
             </Link>
-            <h1 className="text-2xl font-bold text-blue-600">My Addresses</h1>
+            <h1 className="text-2xl font-bold text-gray-900">My Addresses</h1>
             <button
               onClick={() => {
                 setEditingAddress(null)
@@ -235,267 +277,303 @@ export default function Addresses({ user }) {
                 })
                 setShowModal(true)
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
             >
-              Add Address
+              <Plus className="w-4 h-4" />
+              Add New
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-12">
         {addresses.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-600 mb-4">No addresses saved yet</p>
+          <div className="glass-card rounded-3xl p-16 text-center shadow-lg">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+              <MapPin className="w-12 h-12 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No saved addresses yet</h3>
+            <p className="text-gray-500 mb-8">Add your first address to get started with bookings</p>
             <button
               onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all"
             >
-              Add Your First Address
+              Add Address
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {addresses.map(address => (
-              <div key={address.id} className="bg-white rounded-lg shadow-md p-6">
+              <div key={address.id} className="glass-card rounded-2xl p-6 shadow-lg address-card group">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="font-semibold text-lg capitalize">{address.address_type}</div>
-                    {address.is_default && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Default</span>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      address.address_type === 'home' ? 'bg-gradient-to-br from-blue-500 to-indigo-500' :
+                      address.address_type === 'office' ? 'bg-gradient-to-br from-orange-500 to-red-500' :
+                      'bg-gradient-to-br from-purple-500 to-pink-500'
+                    } shadow-md`}>
+                      {address.address_type === 'home' ? <Home className="w-6 h-6 text-white" /> :
+                       address.address_type === 'office' ? <Briefcase className="w-6 h-6 text-white" /> :
+                       <MapPin className="w-6 h-6 text-white" />}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 capitalize">{address.address_type}</h3>
+                      {address.is_default && (
+                        <span className="inline-block mt-1 text-xs font-semibold px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
+                          Default
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 action-buttons">
                     <button
                       onClick={() => handleEdit(address)}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
+                      className="p-2 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors"
+                      title="Edit"
                     >
-                      Edit
+                      <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(address.id)}
-                      className="text-red-600 hover:text-red-700 text-sm"
+                      onClick={() => setDeleteConfirm(address.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
+                      title="Delete"
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <div className="text-gray-600 space-y-1">
-                  <div>{address.address_line1}</div>
-                  {address.address_line2 && <div>{address.address_line2}</div>}
-                  <div>{address.city}, {address.state} {address.pincode}</div>
+
+                <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-4"></div>
+
+                <div className="space-y-2 text-gray-600">
+                  <p className="font-semibold text-gray-900">{address.address_line1}</p>
+                  {address.address_line2 && <p className="text-sm text-gray-500">{address.address_line2}</p>}
+                  <p className="text-sm font-semibold text-gray-700">
+                    {address.city}, {address.state} {address.pincode}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Modal */}
+      {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">{editingAddress ? 'Edit Address' : 'Add Address'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-card rounded-3xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">{editingAddress ? 'Edit Address' : 'Add New Address'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address Type</label>
-                <select
-                  value={formData.address_type}
-                  onChange={(e) => setFormData({ ...formData, address_type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="home">Home</option>
-                  <option value="office">Office</option>
-                  <option value="other">Other</option>
-                </select>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Address Type</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['home', 'office', 'other'].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, address_type: type })}
+                      className={`py-3 rounded-xl font-semibold capitalize transition-all ${
+                        formData.address_type === type
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                          : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-purple-300'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl font-semibold hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                {locating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    Detecting...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-5 h-5" />
+                    Use Current Location
+                  </>
+                )}
+              </button>
+
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-semibold text-purple-900">Pin Location on Map</label>
+                  {formData.latitude && formData.longitude && (
+                    <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-semibold">Set ✓</span>
+                  )}
+                </div>
                 <button
                   type="button"
-                  onClick={useCurrentLocation}
-                  disabled={locating}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50"
+                  onClick={openMapPicker}
+                  className="w-full mt-2 py-2.5 bg-white border-2 border-purple-200 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
                 >
-                  {locating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      Detecting...
-                    </>
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      Use Current Location
-                    </>
-                  )}
+                  {formData.latitude && formData.longitude ? 'Adjust Location' : 'Set Location'}
                 </button>
-
-              </div>
-
-              {/* Map Preview / Button */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-blue-900">Pin Location on Map</label>
-                  {formData.latitude && formData.longitude && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                      Location Set ✓
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-blue-700 mb-3">
-                  Set the exact location for better service delivery.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={openMapPicker}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    <MapPinIcon className="w-4 h-4" />
-                    {formData.latitude && formData.longitude ? 'Adjust Location on Map' : 'Set Location on Map'}
-                  </button>
-                </div>
-                {formData.latitude && formData.longitude && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Lat: {Number(formData.latitude).toFixed(4)}, Lng: {Number(formData.longitude).toFixed(4)}
-                  </div>
-                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address Line 1 *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Address Line 1 *</label>
                 <input
                   type="text"
                   required
                   value={formData.address_line1}
                   onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address Line 2</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Address Line 2</label>
                 <input
                   type="text"
                   value={formData.address_line2}
                   onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">City *</label>
                   <input
                     type="text"
                     required
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
                   <input
                     type="text"
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
                 <input
                   type="text"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none transition-all"
                 />
               </div>
 
-              <div className="flex items-center">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.is_default}
                   onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-                  className="mr-2"
+                  className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
                 />
-                <label className="text-sm font-medium text-gray-700">Set as default address</label>
-              </div>
+                <span className="text-sm font-semibold text-gray-700">Set as default address</span>
+              </label>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={saving}
+                  className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50"
                 >
-                  {editingAddress ? 'Update' : 'Add'}
+                  {saving ? 'Saving...' : editingAddress ? 'Update Address' : 'Add Address'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowModal(false)
-                    setEditingAddress(null)
-                  }}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  onClick={() => setShowModal(false)}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           </div>
-        </div >
-      )
-      }
+        </div>
+      )}
 
-      {/* Map Picker Modal */}
-      {
-        showMapModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-lg p-0 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative">
-              <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+      {/* Map Modal */}
+      {showMapModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-3xl overflow-hidden max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-pink-50">
+              <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Set Precise Location</h3>
-                  <p className="text-sm text-gray-500">Drag the map to position the pin exactly at your location</p>
+                  <h3 className="text-xl font-bold text-gray-900">Set Precise Location</h3>
+                  <p className="text-sm text-gray-600 mt-1">Drag the map to position the pin</p>
                 </div>
-                <button
-                  onClick={() => setShowMapModal(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                <button onClick={() => setShowMapModal(false)} className="p-2 hover:bg-white rounded-lg transition-colors">
+                  <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
+            </div>
 
-              <div className="p-0 flex-1 relative bg-gray-100 min-h-[400px]">
-                <LocationPicker
-                  value={mapCoordinates}
-                  onChange={setMapCoordinates}
-                  center={[mapCoordinates.lat, mapCoordinates.lng]}
-                  zoom={15}
-                />
+            <div className="flex-1 relative bg-gray-100 min-h-[400px]">
+              <LocationPicker
+                value={mapCoordinates}
+                onChange={setMapCoordinates}
+                center={[mapCoordinates.lat, mapCoordinates.lng]}
+                zoom={15}
+              />
 
-                {/* Floating Confirm Button */}
-                <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center z-[500]">
-                  <button
-                    type="button"
-                    onClick={handleMapConfirm}
-                    className="bg-black text-white px-8 py-3 rounded-full font-medium shadow-xl hover:bg-gray-800 transform hover:scale-105 transition-all flex items-center gap-2"
-                  >
-                    <MapPinIcon className="w-5 h-5 text-red-500" />
-                    Confirm Location
-                  </button>
-                </div>
+              <div className="absolute bottom-6 left-0 right-0 px-6 flex justify-center z-[500]">
+                <button
+                  type="button"
+                  onClick={handleMapConfirm}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                  Confirm Location
+                </button>
               </div>
             </div>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Delete Address?</h3>
+            <p className="text-gray-600 text-center mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
-

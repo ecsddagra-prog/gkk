@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { MapPin, Calendar, Clock, ChevronRight, Trash2, Plus } from 'lucide-react'
+import { MapPin, Calendar, Clock, X, Plus, ChevronRight } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -15,21 +15,15 @@ export default function BookService({ user }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
-  const [step, setStep] = useState(1) // 1: Review, 2: Details
 
-  // Data State
   const [selectedServices, setSelectedServices] = useState([])
   const [addresses, setAddresses] = useState([])
   const [cities, setCities] = useState([])
-
-  // Selection State
-  const [serviceConfigs, setServiceConfigs] = useState({}) // { [serviceId]: { subServiceIds: [], subSubServiceIds: [] } }
+  const [serviceConfigs, setServiceConfigs] = useState({})
   const [selectedAddressId, setSelectedAddressId] = useState(null)
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
   const [waitingTimeFlexibility, setWaitingTimeFlexibility] = useState('Exact Time')
-
-  // Booking Modes: 'standard', 'offer', 'bid'
   const [bookingMode, setBookingMode] = useState('standard')
   const [offerPrice, setOfferPrice] = useState('')
 
@@ -46,13 +40,9 @@ export default function BookService({ user }) {
   const loadInitialData = async () => {
     try {
       setLoading(true)
-
-      // 1. Load Services from Query
       if (servicesQuery) {
         const { data } = await axios.get(`/api/services/bulk?ids=${servicesQuery}`)
         setSelectedServices(data.services || [])
-
-        // Initialize configs
         const initialConfigs = {}
         data.services.forEach(s => {
           initialConfigs[s.id] = { subServiceIds: [], subSubServiceIds: [] }
@@ -60,7 +50,6 @@ export default function BookService({ user }) {
         setServiceConfigs(initialConfigs)
       }
 
-      // 2. Load User Data (Addresses, Cities)
       const token = (await supabase.auth.getSession()).data.session?.access_token
       const { data: bootstrapData } = await axios.get('/api/catalog/bootstrap', {
         headers: { Authorization: `Bearer ${token}` }
@@ -68,10 +57,8 @@ export default function BookService({ user }) {
 
       setAddresses(bootstrapData.addresses || [])
       setCities(bootstrapData.cities || [])
-
       const defaultAddr = bootstrapData.addresses?.find(a => a.is_default) || bootstrapData.addresses?.[0]
       if (defaultAddr) setSelectedAddressId(defaultAddr.id)
-
     } catch (error) {
       console.error('Error loading checkout data:', error)
       toast.error('Failed to prepare checkout')
@@ -84,13 +71,11 @@ export default function BookService({ user }) {
     setServiceConfigs(prev => {
       const config = prev[serviceId] || { subServiceIds: [], subSubServiceIds: [] }
       const isSelected = config.subServiceIds.includes(subId)
-
       let nextSubIds = []
       let nextSubSubIds = [...config.subSubServiceIds]
 
       if (isSelected) {
         nextSubIds = config.subServiceIds.filter(id => id !== subId)
-        // Also remove sub-sub-services belonging to this sub-service
         const subService = selectedServices.find(s => s.id === serviceId)?.sub_services?.find(ss => ss.id === subId)
         if (subService?.sub_subservices) {
           const addonIds = subService.sub_subservices.map(a => a.id)
@@ -125,9 +110,7 @@ export default function BookService({ user }) {
   const removeService = (serviceId) => {
     setSelectedServices(prev => {
       const updated = prev.filter(s => s.id !== serviceId)
-      if (updated.length === 0) {
-        router.push('/')
-      }
+      if (updated.length === 0) router.push('/')
       return updated
     })
   }
@@ -161,7 +144,6 @@ export default function BookService({ user }) {
       const address = addresses.find(a => a.id === selectedAddressId)
       const city = cities.find(c => c.name.toLowerCase() === address.city.toLowerCase())
 
-      // Create bookings sequentially for now (could be parallel)
       const results = []
       for (const service of selectedServices) {
         const config = serviceConfigs[service.id]
@@ -191,14 +173,6 @@ export default function BookService({ user }) {
     }
   }
 
-  const handleModeAction = () => {
-    if (bookingMode === 'standard') {
-      handleCreateBookings()
-    } else {
-      handleRateQuote()
-    }
-  }
-
   const handleRateQuote = async () => {
     if (!selectedAddressId) return toast.error('Please select an address')
     if (selectedServices.length === 0) return toast.error('Please select at least one service')
@@ -214,12 +188,9 @@ export default function BookService({ user }) {
       const address = addresses.find(a => a.id === selectedAddressId)
       const city = cities.find(c => c.name.toLowerCase() === address.city.toLowerCase())
 
-      // For now, create rate quote for the first service
-      // In future, could support multiple services or create multiple quotes
       const service = selectedServices[0]
       const config = serviceConfigs[service.id] || { subServiceIds: [], subSubServiceIds: [] }
 
-      // Build sub-service names for details
       let subServiceNames = service.name
       if (config.subServiceIds.length > 0) {
         const selectedSubs = service.sub_services?.filter(sub => config.subServiceIds.includes(sub.id)) || []
@@ -245,8 +216,6 @@ export default function BookService({ user }) {
           sub_service_ids: config.subServiceIds,
           sub_subservice_ids: config.subSubServiceIds,
           base_charge: calculateServicePrice(service),
-          sub_subservice_ids: config.subSubServiceIds,
-          base_charge: calculateServicePrice(service),
           hourly_charge: null,
           waiting_time_flexibility: waitingTimeFlexibility
         }
@@ -266,91 +235,129 @@ export default function BookService({ user }) {
     }
   }
 
+  const handleModeAction = () => {
+    if (bookingMode === 'standard') {
+      handleCreateBookings()
+    } else {
+      handleRateQuote()
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FD] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/20 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-500 font-bold">Initializing Checkout...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Preparing your checkout...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FD]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/20">
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .gradient-border {
+          background: linear-gradient(white, white) padding-box,
+                      linear-gradient(135deg, #a855f7, #ec4899) border-box;
+          border: 2px solid transparent;
+        }
+        .glow-button:hover {
+          box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+        }
+      `}</style>
+
       <Header user={user} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-10">
+      {/* Progress Indicator */}
+      <div className="max-w-7xl mx-auto px-6 pt-8">
+        <div className="flex items-center justify-center gap-3 text-sm font-semibold">
+          <span className="text-purple-600">Cart</span>
+          <ChevronRight className="w-4 h-4 text-gray-300" />
+          <span className="text-purple-600">Address</span>
+          <ChevronRight className="w-4 h-4 text-gray-300" />
+          <span className="text-purple-600">Schedule</span>
+          <ChevronRight className="w-4 h-4 text-gray-300" />
+          <span className="text-gray-400">Confirm</span>
+        </div>
+      </div>
 
-          {/* Left Side: Services & Configuration */}
-          <div className="flex-1 space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-black text-gray-900 tracking-tight">Review <span className="text-purple-600">Basket</span></h2>
-              <p className="text-gray-500 font-bold">{selectedServices.length} items</p>
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid lg:grid-cols-[1fr_400px_380px] gap-8">
+
+          {/* LEFT: Review Basket */}
+          <div className="space-y-6">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-4xl font-bold text-gray-900">Review <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Basket</span></h1>
+              <span className="text-sm text-gray-500 font-medium">{selectedServices.length} {selectedServices.length === 1 ? 'item' : 'items'}</span>
             </div>
 
             {selectedServices.map(service => (
-              <div key={service.id} className="glass-premium bg-white/70 rounded-3xl p-6 border border-white shadow-xl hover:shadow-2xl transition-all">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex gap-4 items-center">
-                    <div className="text-4xl bg-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner">
-                      {service.category?.icon || '🔧'}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black text-gray-900">{service.name}</h3>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{service.category?.name}</p>
+              <div key={service.id} className="glass-card rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                <div className="flex items-start gap-5">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl shadow-lg flex-shrink-0">
+                    {service.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{service.name}</h3>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{service.category?.name}</p>
+                    <div className="mt-3 flex items-center gap-3 text-sm">
+                      <span className="text-purple-600 font-bold">₹{calculateServicePrice(service)}</span>
+                      {service.estimated_duration && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="text-gray-500">{service.estimated_duration}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <button
                     onClick={() => removeService(service.id)}
-                    className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-red-50 rounded-xl text-gray-400 hover:text-red-500"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Options / Sub-services */}
                 {service.sub_services?.length > 0 && (
-                  <div className="space-y-4">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Customize this service</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Customize Service</p>
+                    <div className="space-y-3">
                       {service.sub_services.map(sub => (
-                        <div key={sub.id} className="space-y-2">
+                        <div key={sub.id}>
                           <button
                             onClick={() => toggleSubService(service.id, sub.id)}
-                            className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${serviceConfigs[service.id]?.subServiceIds.includes(sub.id)
-                              ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-100'
-                              : 'bg-white border-gray-100 text-gray-700 hover:border-purple-200'
-                              }`}
+                            className={`w-full p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between ${
+                              serviceConfigs[service.id]?.subServiceIds.includes(sub.id)
+                                ? 'border-purple-500 bg-purple-50'
+                                : 'border-gray-100 bg-white hover:border-purple-200'
+                            }`}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-md border flex items-center justify-center ${serviceConfigs[service.id]?.subServiceIds.includes(sub.id) ? 'bg-white/20 border-white' : 'border-gray-200'}`}>
-                                {serviceConfigs[service.id]?.subServiceIds.includes(sub.id) && <ChevronRight className="w-3 h-3" />}
-                              </div>
-                              <span className="font-bold text-sm">{sub.name}</span>
-                            </div>
-                            <span className={`text-sm font-black ${serviceConfigs[service.id]?.subServiceIds.includes(sub.id) ? 'text-white' : 'text-purple-600'}`}>
-                              ₹{sub.base_charge}
-                            </span>
+                            <span className="font-semibold text-gray-900">{sub.name}</span>
+                            <span className="font-bold text-purple-600">₹{sub.base_charge}</span>
                           </button>
 
-                          {/* Addons for this sub-service */}
                           {serviceConfigs[service.id]?.subServiceIds.includes(sub.id) && sub.sub_subservices?.length > 0 && (
-                            <div className="ml-6 space-y-2 pt-1 uppercase text-[10px] tracking-widest font-black text-gray-400">
-                              <p>Add-ons</p>
+                            <div className="ml-6 mt-2 space-y-2">
                               {sub.sub_subservices.map(addon => (
                                 <button
                                   key={addon.id}
                                   onClick={() => toggleSubSubService(service.id, addon.id)}
-                                  className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${serviceConfigs[service.id]?.subSubServiceIds.includes(addon.id)
-                                    ? 'bg-purple-50 border-purple-200 text-purple-700'
-                                    : 'bg-white/50 border-gray-100 text-gray-500'
-                                    }`}
+                                  className={`w-full p-3 rounded-lg border transition-all text-sm flex items-center justify-between ${
+                                    serviceConfigs[service.id]?.subSubServiceIds.includes(addon.id)
+                                      ? 'border-purple-300 bg-purple-50 text-purple-700'
+                                      : 'border-gray-100 bg-white text-gray-600 hover:border-purple-100'
+                                  }`}
                                 >
-                                  <span className="font-bold">{addon.name}</span>
-                                  <span className="font-black">+₹{addon.base_charge}</span>
+                                  <span className="font-medium">{addon.name}</span>
+                                  <span className="font-bold">+₹{addon.base_charge}</span>
                                 </button>
                               ))}
                             </div>
@@ -364,183 +371,200 @@ export default function BookService({ user }) {
             ))}
           </div>
 
-          {/* Right Side: Details & Summary */}
-          <div className="lg:w-96 space-y-8">
-            {/* Address Selection */}
-            <div className="glass-premium bg-white/70 rounded-3xl p-8 border border-white shadow-xl">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
-                  <MapPin className="w-5 h-5" />
+          {/* MIDDLE: Location & Schedule */}
+          <div className="space-y-6">
+            {/* Step 1: Location */}
+            <div className="glass-card rounded-3xl p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-sm">1</span>
                 </div>
-                <h4 className="text-xl font-bold text-gray-900">Service Location</h4>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Step 1</p>
+                  <h3 className="text-lg font-bold text-gray-900">Service Location</h3>
+                </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                {addresses.map(addr => (
-                  <button
-                    key={addr.id}
-                    onClick={() => setSelectedAddressId(addr.id)}
-                    className={`w-full p-4 rounded-2xl border text-left transition-all ${selectedAddressId === addr.id
-                      ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-100'
-                      : 'bg-white border-gray-100 hover:border-indigo-100'
-                      }`}
-                  >
-                    <p className="font-bold text-gray-900">{addr.address_type}</p>
-                    <p className="text-xs text-gray-500 truncate">{addr.address_line1}, {addr.city}</p>
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <select
+                  value={selectedAddressId || ''}
+                  onChange={(e) => setSelectedAddressId(e.target.value)}
+                  className="w-full p-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none font-semibold text-gray-700 transition-all bg-white"
+                >
+                  <option value="" disabled>Select an address</option>
+                  {addresses.map(addr => (
+                    <option key={addr.id} value={addr.id}>
+                      {addr.address_type} - {addr.address_line1}, {addr.city}
+                      {addr.is_default ? ' (Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {selectedAddressId && (
+                  <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    {(() => {
+                      const addr = addresses.find(a => a.id === selectedAddressId)
+                      return addr ? (
+                        <>
+                          <p className="font-bold text-gray-900 mb-1 capitalize">{addr.address_type}</p>
+                          <p className="text-sm text-gray-600">{addr.address_line1}</p>
+                          {addr.address_line2 && <p className="text-sm text-gray-600">{addr.address_line2}</p>}
+                          <p className="text-sm text-gray-600">{addr.city}, {addr.state} {addr.pincode}</p>
+                        </>
+                      ) : null
+                    })()}
+                  </div>
+                )}
               </div>
-              <Link href="/addresses" className="flex items-center gap-2 text-indigo-600 font-bold text-sm hover:underline">
-                <Plus className="w-4 h-4" /> Add New Address
+
+              <Link href="/addresses" className="mt-4 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-200 rounded-2xl text-indigo-600 font-semibold text-sm hover:border-indigo-300 hover:bg-indigo-50/50 transition-all">
+                <Plus className="w-4 h-4" />
+                Add New Address
               </Link>
             </div>
 
-            {/* Scheduling */}
-            <div className="glass-premium bg-white/70 rounded-3xl p-8 border border-white shadow-xl">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-orange-100 text-orange-600 rounded-xl">
-                  <Calendar className="w-5 h-5" />
+            {/* Step 2: Schedule */}
+            <div className="glass-card rounded-3xl p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-sm">2</span>
                 </div>
-                <h4 className="text-xl font-bold text-gray-900">Schedule</h4>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Step 2</p>
+                  <h3 className="text-lg font-bold text-gray-900">Schedule</h3>
+                </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Preferred Date</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Preferred Date</label>
                   <input
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full bg-white border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-orange-100 outline-none font-bold text-gray-700"
+                    className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none font-semibold text-gray-700 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Preferred Time</label>
-                  <div className="relative">
-                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full bg-white border border-gray-100 p-4 pl-12 rounded-2xl focus:ring-2 focus:ring-orange-100 outline-none font-bold text-gray-700"
-                    />
-                  </div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Preferred Time</label>
+                  <input
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none font-semibold text-gray-700 transition-all"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Final Summary & CTA */}
-          <div className="bg-gray-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mt-16 -mr-16"></div>
+          {/* RIGHT: Booking Mode Panel */}
+          <div className="lg:sticky lg:top-8 h-fit">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 shadow-2xl text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-pink-600/20 rounded-full blur-3xl"></div>
 
-            <h4 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4 text-center">Booking Mode</h4>
+              <div className="relative z-10">
+                <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest text-center mb-6">Booking Mode</h4>
 
-            {/* Booking Mode Selector */}
-            <div className="flex p-1 bg-white/10 rounded-xl mb-6">
-              <button
-                onClick={() => setBookingMode('standard')}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'standard' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-              >
-                Standard
-              </button>
-              <button
-                onClick={() => setBookingMode('offer')}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'offer' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-              >
-                Your Offer
-              </button>
-              <button
-                onClick={() => setBookingMode('bid')}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${bookingMode === 'bid' ? 'bg-purple-600 text-white shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-              >
-                Get Bids
-              </button>
-            </div>
+                {/* Mode Toggle */}
+                <div className="flex gap-2 p-1.5 bg-black/30 rounded-2xl mb-8 backdrop-blur-sm">
+                  {['standard', 'offer', 'bid'].map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setBookingMode(mode)}
+                      className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all duration-300 ${
+                        bookingMode === mode
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg glow-button'
+                          : 'text-gray-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {mode === 'standard' ? 'Standard' : mode === 'offer' ? 'Your Offer' : 'Get Bids'}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Mode Specific Content */}
-            <div className="space-y-4 mb-8">
-              {bookingMode === 'standard' && (
-                <>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-white/60 font-medium">Subtotal</span>
-                    <span className="font-bold">₹{totalPrice}</span>
-                  </div>
-                  <div className="pt-4 border-t border-white/10">
-                    <p className="text-[10px] text-white/40 mb-2">Instant confirmation at provider's rate.</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-black">Total</span>
-                      <span className="text-3xl font-black text-purple-400">₹{totalPrice}</span>
+                {/* Mode Content */}
+                <div className="space-y-6 mb-8">
+                  {bookingMode === 'standard' && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">Subtotal</span>
+                        <span className="font-bold text-white">₹{totalPrice}</span>
+                      </div>
+                      <div className="pt-4 border-t border-white/20">
+                        <p className="text-xs text-gray-300 mb-3">Instant confirmation at provider's rate</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xl font-bold text-white">Total</span>
+                          <span className="text-4xl font-black text-purple-400">₹{totalPrice}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {bookingMode === 'offer' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-300 uppercase tracking-wider block mb-2">Your Offer Price</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={offerPrice}
+                            onChange={(e) => setOfferPrice(e.target.value)}
+                            placeholder={`${Math.round(totalPrice * 0.85)}`}
+                            className="w-full pl-10 pr-4 py-4 bg-white/10 border-2 border-white/30 rounded-xl text-white placeholder-gray-400 focus:border-purple-400 focus:ring-4 focus:ring-purple-500/20 outline-none font-bold transition-all"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-orange-300 font-semibold">Providers will be notified. First to accept wins.</p>
                     </div>
-                  </div>
-                </>
-              )}
+                  )}
 
-              {bookingMode === 'offer' && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-white/60 uppercase tracking-widest">Your Offer Price (₹)</label>
-                    <input
-                      type="number"
-                      value={offerPrice}
-                      onChange={(e) => setOfferPrice(e.target.value)}
-                      placeholder={`e.g. ${Math.round(totalPrice * 0.9)}`}
-                      className="w-full bg-white/10 border border-white/20 p-3 rounded-xl text-white placeholder-white/20 focus:ring-2 focus:ring-purple-500 outline-none font-bold"
-                    />
-                    <p className="text-[10px] text-orange-400 font-bold mt-2">
-                      * Providers will be notified. First to accept wins.
-                    </p>
-                  </div>
-                </>
-              )}
+                  {bookingMode === 'bid' && (
+                    <div className="text-center py-4">
+                      <p className="font-bold text-white mb-2">Request Competitive Bids</p>
+                      <p className="text-sm text-gray-300">Providers send their best quotes. You choose the winner.</p>
+                    </div>
+                  )}
 
-              {bookingMode === 'bid' && (
-                <div className="text-center py-2">
-                  <p className="text-sm font-bold text-white mb-2">Request Competitive Bids</p>
-                  <p className="text-xs text-white/60 leading-relaxed">
-                    Providers will send you their best quotes. You choose the best rate.
-                  </p>
+                  {bookingMode !== 'standard' && (
+                    <div className="pt-4 border-t border-white/20">
+                      <label className="text-xs font-bold text-gray-300 uppercase tracking-wider block mb-2">Waiting Flexibility</label>
+                      <select
+                        value={waitingTimeFlexibility}
+                        onChange={(e) => setWaitingTimeFlexibility(e.target.value)}
+                        className="w-full p-3 bg-white/10 border-2 border-white/30 rounded-xl text-white font-semibold focus:border-purple-400 outline-none cursor-pointer transition-all"
+                      >
+                        <option value="Exact Time" className="text-gray-900">Exact Time</option>
+                        <option value="+/- 30 Minutes" className="text-gray-900">+/- 30 Minutes</option>
+                        <option value="+/- 1 Hour" className="text-gray-900">+/- 1 Hour</option>
+                        <option value="+/- 2 Hours" className="text-gray-900">+/- 2 Hours</option>
+                        <option value="Same Day (Anytime)" className="text-gray-900">Same Day</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Waiting Time Flexibility for Offer/Bid Modes */}
-              {bookingMode !== 'standard' && (
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <label className="text-[10px] font-black text-white/60 uppercase tracking-widest block mb-2">Waiting Time Flexibility</label>
-                  <select
-                    value={waitingTimeFlexibility}
-                    onChange={(e) => setWaitingTimeFlexibility(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 p-3 rounded-xl text-white focus:ring-2 focus:ring-purple-500 outline-none font-bold appearance-none cursor-pointer hover:bg-white/20 transition-colors"
-                  >
-                    <option value="Exact Time" className="text-gray-900">Exact Time (Strict)</option>
-                    <option value="+/- 30 Minutes" className="text-gray-900">+/- 30 Minutes</option>
-                    <option value="+/- 1 Hour" className="text-gray-900">+/- 1 Hour</option>
-                    <option value="+/- 2 Hours" className="text-gray-900">+/- 2 Hours</option>
-                    <option value="+/- 4 Hours" className="text-gray-900">+/- 4 Hours</option>
-                    <option value="Same Day (Anytime)" className="text-gray-900">Same Day (Anytime)</option>
-                    <option value="Flexible (This Week)" className="text-gray-900">Flexible (This Week)</option>
-                  </select>
-                </div>
-              )}
+                {/* CTA Button */}
+                <button
+                  onClick={handleModeAction}
+                  disabled={submitting || quoteLoading}
+                  className="w-full py-5 bg-white text-gray-900 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed glow-button"
+                >
+                  {submitting || quoteLoading ? 'Processing...' :
+                    bookingMode === 'standard' ? 'Book Now' :
+                      bookingMode === 'offer' ? 'Broadcast Offer' : 'Request Quotes'}
+                </button>
+
+                <p className="text-xs text-gray-400 text-center mt-4 font-medium">🔒 Secure 256-bit SSL encrypted</p>
+              </div>
             </div>
-
-            <button
-              onClick={handleModeAction}
-              disabled={submitting || quoteLoading}
-              className="w-full py-5 bg-white text-gray-900 hover:bg-purple-50 rounded-2xl font-black text-xl shadow-xl transition-all active:scale-95 disabled:opacity-50"
-            >
-              {submitting || quoteLoading ? 'Processing...' :
-                bookingMode === 'standard' ? 'Book Now' :
-                  bookingMode === 'offer' ? 'Broadcast Offer' :
-                    'Request Quotes'
-              }
-            </button>
-            <p className="text-[10px] text-white/30 text-center mt-4 font-bold uppercase tracking-tighter">Secure 256-bit SSL encrypted payment</p>
           </div>
         </div>
       </main>
+
       <Footer />
     </div>
   )
 }
-
