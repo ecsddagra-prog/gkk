@@ -426,22 +426,6 @@ export default function BookService({ user }) {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Waiting Time Flexibility</label>
-                  <select
-                    value={waitingTimeFlexibility}
-                    onChange={(e) => setWaitingTimeFlexibility(e.target.value)}
-                    className="w-full bg-white border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-orange-100 outline-none font-bold text-gray-700 appearance-none"
-                  >
-                    <option value="Exact Time">Exact Time (Strict)</option>
-                    <option value="+/- 30 Minutes">+/- 30 Minutes</option>
-                    <option value="+/- 1 Hour">+/- 1 Hour</option>
-                    <option value="+/- 2 Hours">+/- 2 Hours</option>
-                    <option value="+/- 4 Hours">+/- 4 Hours</option>
-                    <option value="Same Day (Anytime)">Same Day (Anytime)</option>
-                    <option value="Flexible (This Week)">Flexible (This Week)</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>
@@ -516,6 +500,26 @@ export default function BookService({ user }) {
                   <p className="text-xs text-white/60 leading-relaxed">
                     Providers will send you their best quotes. You choose the best rate.
                   </p>
+                </div>
+              )}
+
+              {/* Waiting Time Flexibility for Offer/Bid Modes */}
+              {bookingMode !== 'standard' && (
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <label className="text-[10px] font-black text-white/60 uppercase tracking-widest block mb-2">Waiting Time Flexibility</label>
+                  <select
+                    value={waitingTimeFlexibility}
+                    onChange={(e) => setWaitingTimeFlexibility(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 p-3 rounded-xl text-white focus:ring-2 focus:ring-purple-500 outline-none font-bold appearance-none cursor-pointer hover:bg-white/20 transition-colors"
+                  >
+                    <option value="Exact Time" className="text-gray-900">Exact Time (Strict)</option>
+                    <option value="+/- 30 Minutes" className="text-gray-900">+/- 30 Minutes</option>
+                    <option value="+/- 1 Hour" className="text-gray-900">+/- 1 Hour</option>
+                    <option value="+/- 2 Hours" className="text-gray-900">+/- 2 Hours</option>
+                    <option value="+/- 4 Hours" className="text-gray-900">+/- 4 Hours</option>
+                    <option value="Same Day (Anytime)" className="text-gray-900">Same Day (Anytime)</option>
+                    <option value="Flexible (This Week)" className="text-gray-900">Flexible (This Week)</option>
+                  </select>
                 </div>
               )}
             </div>

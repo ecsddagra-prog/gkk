@@ -71,9 +71,18 @@ export default function RateQuoteDetails({ user }) {
         setCountdown('00:00')
         return false
       }
-      const minutes = Math.floor(diff / (1000 * 60))
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-      setCountdown(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`)
+
+      const parts = []
+      if (days > 0) parts.push(`${days}d`)
+      parts.push(`${String(hours).padStart(2, '0')}h`)
+      parts.push(`${String(minutes).padStart(2, '0')}m`)
+      parts.push(`${String(seconds).padStart(2, '0')}s`)
+
+      setCountdown(parts.join(' : '))
       return true
     }
 

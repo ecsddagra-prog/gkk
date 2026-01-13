@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { Star, ArrowRight } from 'lucide-react'
 
-export default function ServiceCard({ service, category, onBook }) {
+export default function ServiceCard({ service, category, onBook, isSelected, onToggleSelect }) {
     const CardContent = () => (
-        <div className="glass-premium bg-white/70 rounded-[40px] border border-white shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer group h-full flex flex-col border-transparent hover:border-purple-200">
+        <div className={`glass-premium bg-white/70 rounded-[40px] border shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer group h-full flex flex-col ${isSelected ? 'border-purple-600 ring-4 ring-purple-100' : 'border-white hover:border-purple-200'}`}>
             {/* Service Image Section */}
             <div className="relative h-64 bg-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <div className="text-8xl group-hover:scale-125 transition-transform duration-700 ease-out z-10 filter drop-shadow-lg">
@@ -47,6 +47,14 @@ export default function ServiceCard({ service, category, onBook }) {
             </div>
         </div>
     )
+
+    if (onToggleSelect) {
+        return (
+            <div onClick={() => onToggleSelect(service)}>
+                <CardContent />
+            </div>
+        )
+    }
 
     if (onBook) {
         return (

@@ -3,15 +3,17 @@ import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import ServiceCard from '../../components/ServiceCard'
 import Link from 'next/link'
+import ServiceCard from '../../components/ServiceCard'
+import FloatingBookingBar from '../../components/FloatingBookingBar'
 
 export default function CategoryServices({ user }) {
     const router = useRouter()
     const { id } = router.query
     const [category, setCategory] = useState(null)
-    const [services, setServices] = useState([])
     const [loading, setLoading] = useState(true)
+    const [services, setServices] = useState([])
+    const [selectedServices, setSelectedServices] = useState([])
 
     useEffect(() => {
         if (id) {
@@ -46,6 +48,23 @@ export default function CategoryServices({ user }) {
         } finally {
             setLoading(false)
         }
+    }
+
+    const toggleServiceSelection = (service) => {
+        setSelectedServices(prev => {
+            const isAlreadySelected = prev.find(s => s.id === service.id)
+            if (isAlreadySelected) {
+                return prev.filter(s => s.id !== service.id)
+            } else {
+                return [...prev, service]
+            }
+        })
+    }
+
+    const handleContinueBooking = () => {
+        if (selectedServices.length === 0) return
+        const serviceIds = selectedServices.map(s => s.id).join(',')
+        router.push(`/book-service?services=${serviceIds}`)
     }
 
     if (loading) {
@@ -93,6 +112,8 @@ export default function CategoryServices({ user }) {
                                 <ServiceCard
                                     service={service}
                                     category={category}
+                                    isSelected={selectedServices.some(s => s.id === service.id)}
+                                    onToggleSelect={toggleServiceSelection}
                                 />
                             </div>
                         ))}
@@ -106,7 +127,12 @@ export default function CategoryServices({ user }) {
                 )}
             </main>
 
+            <FloatingBookingBar
+                selectedCount={selectedServices.length}
+                onContinue={handleContinueBooking}
+            />
+
             <Footer />
-        </div>
+        </div >
     )
 }

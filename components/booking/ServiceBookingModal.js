@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { MapPin as MapPinIcon, X, Layout } from 'lucide-react'
 import LocationPicker from '../ui/LocationPicker'
 
-export default function ServiceBookingModal({ isOpen, onClose, user, initialServiceId, initialCityId }) {
+export default function ServiceBookingModal({ isOpen, onClose, user, initialServiceId, initialCategoryId, initialCityId }) {
     const router = useRouter()
     const [services, setServices] = useState([])
     const [categories, setCategories] = useState([])
@@ -49,8 +49,9 @@ export default function ServiceBookingModal({ isOpen, onClose, user, initialServ
 
     useEffect(() => {
         if (initialServiceId) setSelectedServiceId(initialServiceId)
+        if (initialCategoryId) setSelectedCategory(initialCategoryId)
         if (initialCityId) setSelectedCity(initialCityId)
-    }, [initialServiceId, initialCityId])
+    }, [initialServiceId, initialCategoryId, initialCityId])
 
     const loadData = async () => {
         try {

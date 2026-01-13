@@ -5,13 +5,15 @@ import { supabase } from '../../lib/supabase'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import ServiceCard from '../../components/ServiceCard'
+import FloatingBookingBar from '../../components/FloatingBookingBar'
 
 export default function Services({ user }) {
     const [categories, setCategories] = useState([])
-    const [services, setServices] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [searchQuery, setSearchQuery] = useState('')
+    const [selectedServices, setSelectedServices] = useState([])
+    const router = useRouter()
 
     useEffect(() => {
         loadData()
@@ -41,14 +43,27 @@ export default function Services({ user }) {
         }
     }
 
-    const filteredServices = services.filter(service => {
-        const matchesCategory = selectedCategory === 'all' || service.category_id === selectedCategory
-        const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            service.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchesCategory && matchesSearch
-    })
+    return matchesCategory && matchesSearch
+})
 
-    return (
+const toggleServiceSelection = (service) => {
+    setSelectedServices(prev => {
+        const isAlreadySelected = prev.find(s => s.id === service.id)
+        if (isAlreadySelected) {
+            return prev.filter(s => s.id !== service.id)
+        } else {
+            return [...prev, service]
+        }
+    })
+}
+
+const handleContinueBooking = () => {
+    if (selectedServices.length === 0) return
+    const serviceIds = selectedServices.map(s => s.id).join(',')
+    router.push(`/book-service?services=${serviceIds}`)
+}
+
+return (
         <div className="min-h-screen bg-[#F8F9FD]">
             <Header user={user} onSearch={setSearchQuery} />
 
@@ -104,6 +119,8 @@ export default function Services({ user }) {
                                     key={service.id}
                                     service={service}
                                     category={service.category}
+                                    isSelected={selectedServices.some(s => s.id === service.id)}
+                                    onToggleSelect={toggleServiceSelection}
                                 />
                             ))
                         ) : (
@@ -123,7 +140,14 @@ export default function Services({ user }) {
                 )}
             </main>
 
+            </main>
+
+            <FloatingBookingBar
+                selectedCount={selectedServices.length}
+                onContinue={handleContinueBooking}
+            />
+
             <Footer />
-        </div>
+        </div >
     )
 }

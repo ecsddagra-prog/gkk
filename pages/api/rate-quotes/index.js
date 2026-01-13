@@ -36,7 +36,35 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'service_id and city_id are required' })
       }
 
-      const countdownMinutes = Number(details?.countdown_minutes) || DEFAULT_COUNTDOWN_MINUTES
+      let durationMinutes = 30 // Default fallback
+
+      if (details?.waiting_time_flexibility) {
+        switch (details.waiting_time_flexibility) {
+          case 'Exact Time':
+            durationMinutes = 15 // Strict: 15 mins auction
+            break
+          case '+/- 30 Minutes':
+            durationMinutes = 30
+            break
+          case '+/- 1 Hour':
+            durationMinutes = 60
+            break
+          case '+/- 2 Hours':
+            durationMinutes = 120
+            break
+          case '+/- 4 Hours':
+            durationMinutes = 240
+            break
+          case 'Same Day (Anytime)':
+            durationMinutes = 720 // 12 Hours
+            break
+          case 'Flexible (This Week)':
+            durationMinutes = 2880 // 48 Hours
+            break
+        }
+      }
+
+      const countdownMinutes = Number(details?.countdown_minutes) || durationMinutes
       const expiresAt = new Date(Date.now() + countdownMinutes * 60 * 1000).toISOString()
 
       const { data: rateQuote, error } = await supabaseAdmin
