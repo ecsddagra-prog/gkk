@@ -43,27 +43,31 @@ export default function Services({ user }) {
         }
     }
 
-    return matchesCategory && matchesSearch
-})
-
-const toggleServiceSelection = (service) => {
-    setSelectedServices(prev => {
-        const isAlreadySelected = prev.find(s => s.id === service.id)
-        if (isAlreadySelected) {
-            return prev.filter(s => s.id !== service.id)
-        } else {
-            return [...prev, service]
-        }
+    const filteredServices = services.filter(service => {
+        const matchesCategory = selectedCategory === 'all' || service.category_id === selectedCategory
+        const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            service.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        return matchesCategory && matchesSearch
     })
-}
 
-const handleContinueBooking = () => {
-    if (selectedServices.length === 0) return
-    const serviceIds = selectedServices.map(s => s.id).join(',')
-    router.push(`/book-service?services=${serviceIds}`)
-}
+    const toggleServiceSelection = (service) => {
+        setSelectedServices(prev => {
+            const isAlreadySelected = prev.find(s => s.id === service.id)
+            if (isAlreadySelected) {
+                return prev.filter(s => s.id !== service.id)
+            } else {
+                return [...prev, service]
+            }
+        })
+    }
 
-return (
+    const handleContinueBooking = () => {
+        if (selectedServices.length === 0) return
+        const serviceIds = selectedServices.map(s => s.id).join(',')
+        router.push(`/book-service?services=${serviceIds}`)
+    }
+
+    return (
         <div className="min-h-screen bg-[#F8F9FD]">
             <Header user={user} onSearch={setSearchQuery} />
 
@@ -138,8 +142,6 @@ return (
                         )}
                     </div>
                 )}
-            </main>
-
             </main>
 
             <FloatingBookingBar
